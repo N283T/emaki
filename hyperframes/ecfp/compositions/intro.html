@@ -30,7 +30,10 @@
 
           // bonds draw in one after another, then the atoms pop onto them
           const mol = molecule(q("#intro-world"));
-          mol.bonds.forEach((b, n) => from(b.els, 10.4 + n * 0.28, 11.0 + n * 0.28, { strokeDashoffset: b.L }, { strokeDashoffset: 0 }, "power2.inOut"));
+          // the gap is longer than the bond and the start sits inside it: with the two exactly equal, rounding
+          // leaves a sliver of dash at the bond's start, and its round cap shows as a dot before anything is drawn
+          mol.bonds.forEach((b, n) => { gsap.set(b.els, { strokeDasharray: `${b.L} ${b.L + 10}` });
+            from(b.els, 10.4 + n * 0.28, 11.0 + n * 0.28, { strokeDashoffset: b.L + 5 }, { strokeDashoffset: 0 }, "power2.inOut"); });
           mol.atoms.forEach((a, n) => from(a.g, 10.9 + n * 0.16, 11.5 + n * 0.16, { scale: 0 }, { scale: 1 }, BACK));
           caption(q("#intro-caps"), 10.2, 14.1, { title: "N-methylacetamide", sub: "CC(=O)NC" });
           window.__timelines["intro"] = tl;
