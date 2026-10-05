@@ -5,7 +5,8 @@
 // Ported from ../../ecfp/movie.js; the storyboard and the drawing are unchanged.
 // ============================================================================
 const W = 1920, H = 1080;
-const { STORY_END, T_END, story, real, ATOMS, BONDS, dist, env, COL, IDS, ID, BIT, fmt, KEYS, ENVK, BITSTR, chipHTML, shade, miniSVG } = emaki; // kit.js
+const { STORY_END, T_END, story, real, ATOMS, BONDS, dist, env, COL, IDS, ID, BIT, fmt, KEYS, ENVK, BITSTR, chipHTML, shade, miniSVG,
+  BVEC, ACCIDENT, INTER, ONLY, UNION, ATOMS_B, BONDS_B, molSVG } = emaki; // kit.js
 
 // ---------- easing / timing helpers ----------
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
@@ -189,11 +190,6 @@ slotEls.forEach((e) => (e.style.zIndex = 0)); numEls.forEach((e) => (e.style.zIn
 const modEls = KEYS.map((k) => D(`<div class="modtxt">…${String(ID(k)).slice(-4)} mod 16 = <b style="color:${COL[k]}">${BIT[k]}</b></div>`));
 const bitsEl = D(`<div class="bits">${BITSTR.map((v) => `<span style="color:${v ? "#fff" : "#39425a"}">${v}</span>`).join("")}</div>`);
 const outroSub = D(`<div style="font:500 34px Inter;color:#8b95ab;white-space:nowrap">radius 2 · 2048 bits · one bit per substructure, give or take a collision</div>`);
-// N-ethylacetamide, CC(=O)NCC: real RDKit ECFP4 folded to 16 bits
-const BVEC = Array.from({ length: 16 }, (_, b) => ([0, 1, 5, 6, 7, 8, 9, 10, 11, 13, 14].includes(b) ? 1 : 0));
-const ACCIDENT = [6, 8]; // on in both, but from different substructures
-const INTER = [...Array(16).keys()].filter((b) => BITSTR[b] && BVEC[b]);
-const ONLY = [...Array(16).keys()].filter((b) => (BITSTR[b] || BVEC[b]) && !(BITSTR[b] && BVEC[b]));
 const colEls = Array.from({ length: 16 }, () => D(`<div style="width:104px;border:3px solid;border-radius:22px"></div>`));
 colEls.forEach((e) => (e.style.zIndex = 1));
 const slotB = Array.from({ length: 16 }, () => D(`<div class="slot"></div>`));
@@ -212,7 +208,6 @@ const defFormula = D(`<div style="display:flex;align-items:center;gap:26px;font:
   </span></div>`);
 const formula2 = D(`<div style="font:700 34px Inter;white-space:nowrap;color:#8b95ab;text-align:center;line-height:1.35">with 2048 bits<br><span style="color:#34d399">7</span> / <span style="color:#6cbcff">17</span> = <span style="color:#ffcf85">0.41</span></div>`);
 // Tanimoto as a live fraction: bits fly from the columns into the numerator and denominator
-const UNION = [...Array(16).keys()].filter((b) => BITSTR[b] || BVEC[b]);
 const TX = 1080, TY = 962;
 const fLabel = D(`<div style="font:800 54px Inter;white-space:nowrap">T(A, B) =</div>`);
 const fBar = D(`<div style="width:250px;height:5px;border-radius:3px;background:#eef1f7"></div>`);
@@ -222,20 +217,7 @@ const fRes = D(`<div style="font:800 64px Inter;white-space:nowrap">= <span styl
 const dotG = INTER.map(() => D(`<div style="width:22px;height:22px;border-radius:50%;background:#34d399;box-shadow:0 0 18px #34d399"></div>`));
 const dotB = UNION.map(() => D(`<div style="width:22px;height:22px;border-radius:50%;background:#6cbcff;box-shadow:0 0 18px #6cbcff"></div>`));
 [...dotG, ...dotB].forEach((e) => (e.style.zIndex = 4));
-function molSVG(atoms, bonds, h = 150) {
-  const xs = atoms.map((a) => a.x), ys = atoms.map((a) => a.y);
-  const x0 = Math.min(...xs) - 60, y0 = Math.min(...ys) - 60, w = Math.max(...xs) - x0 + 60, hh = Math.max(...ys) - y0 + 60;
-  let o = `<svg viewBox="${x0} ${y0} ${w} ${hh}" height="${h}" width="${(h * w) / hh}">`;
-  for (const [i, j, ord] of bonds) {
-    const A = atoms[i], B = atoms[j], L = Math.hypot(B.x - A.x, B.y - A.y);
-    for (const off of ord === 2 ? [-10, 10] : [0]) { const nx = ((B.y - A.y) / L) * off, ny = ((A.x - B.x) / L) * off;
-      o += `<line x1="${A.x + nx}" y1="${A.y + ny}" x2="${B.x + nx}" y2="${B.y + ny}" stroke="#c8d0e0" stroke-width="10" stroke-linecap="round"/>`; }
-  }
-  for (const a of atoms) o += `<circle cx="${a.x}" cy="${a.y}" r="50" fill="#121a2d" stroke="#3a4a74" stroke-width="5"/><text x="${a.x}" y="${a.y + 2}" text-anchor="middle" dominant-baseline="central" font-family="Inter" font-weight="800" font-size="${a.text.length > 1 ? 38 : 46}" fill="${a.el === "O" ? "#ff7b7b" : a.el === "N" ? "#6cbcff" : "#eef1f7"}">${a.text}</text>`;
-  return o + "</svg>";
-}
-const ATOMS_B = [...ATOMS.slice(0, 4), { ...ATOMS[4], text: "CH₂" }, { el: "C", text: "CH₃", x: 1460, y: 600 }];
-const molA = D(molSVG(ATOMS, BONDS)), molB = D(molSVG(ATOMS_B, [...BONDS, [4, 5, 1]]));
+const molA = D(molSVG(ATOMS, BONDS)), molB = D(molSVG(ATOMS_B, BONDS_B));
 const endTitle = D(`<div style="font:900 64px Inter;letter-spacing:-.03em;white-space:nowrap">Inside <span style="color:#4dabf7">ECFP4</span></div>`);
 
 // ---------- background ----------

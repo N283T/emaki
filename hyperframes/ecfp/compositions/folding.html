@@ -11,17 +11,7 @@
       <style>
         #folding { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
           font-family: Inter, system-ui, sans-serif; }
-        #folding .layer { position: absolute; inset: 0; width: 100%; height: 100%; }
-        /* .p: a box GSAP puts at (x, y), centred on that point */
-        #folding .p, #folding .col { position: absolute; left: 0; top: 0; }
-        #folding .col { width: 0; height: 0; }
         #folding .mod { color: #eef1f7; font-weight: 700; font-size: 17px; }
-        #folding .cap { position: absolute; left: 120px; top: 84px; width: 1100px; }
-        #folding .cap .tag { font: 700 20px Inter; letter-spacing: .28em; color: #4dabf7; margin-bottom: 14px; }
-        #folding .cap .title { font: 800 60px/1.08 Inter; letter-spacing: -.025em; }
-        #folding .cap .sub { font: 400 30px/1.35 Inter; color: #8b95ab; margin-top: 14px; }
-        #folding .cap.alert .title { font-size: 96px; color: #ff5d5d; letter-spacing: .02em; text-transform: uppercase; }
-        #folding .cap .w { display: inline-block; white-space: pre; }
       </style>
 
       <div id="folding" data-composition-id="folding" data-width="1920" data-height="1080">
@@ -41,37 +31,13 @@
 
       <script>
         (() => {
-          const { real, ATOMS, BONDS, env, COL, ID, BIT, fmt, KEYS, ENVK, BITSTR, chipHTML, miniSVG } = emaki; // kit.js
-          const root = document.querySelector("#folding");
-          const q = (s) => root.querySelector(s);
-          const svg = (tag, attrs, parent) => { const e = document.createElementNS("http://www.w3.org/2000/svg", tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; };
-          const div = (parent, cls, html = "") => { const e = document.createElement("div"); e.className = cls; e.innerHTML = html; parent.appendChild(e); return e; };
-          const put = (el, x, y, more = {}) => gsap.set(el, { xPercent: -50, yPercent: -50, x, y, ...more });
-
-          // Times below are story seconds, the storyboard's clock (see PLAN in kit.js);
-          // at() turns one into seconds inside this clip.
-          const S0 = 71.2, S1 = 86.4;
-          const at = (s) => real(s) - real(S0);
-          const tl = gsap.timeline({ paused: true });
-          const from = (el, s0, s1, a, b, ease = "none") => tl.fromTo(el, a, { ...b, duration: at(s1) - at(s0), ease }, at(s0));
-          const to = (el, s0, s1, b, ease = "none") => tl.to(el, { ...b, duration: at(s1) - at(s0), ease }, at(s0));
-          // appear at s0, disappear by s1
-          const show = (el, s0, s1, o = 1, fi = 0.35, fo = 0.35) => { from(el, s0, s0 + fi, { opacity: 0 }, { opacity: o }, "power2.out"); to(el, s1 - fo, s1, { opacity: 0 }, "power2.out"); };
-          // an oscillation between s0 and s1 as keyframes: valueAt(j, s) gives the j-th key, `step` story seconds apart
-          const wave = (el, prop, s0, s1, step, rest, valueAt) => {
-            const keys = { "0%": { [prop]: rest }, "100%": { [prop]: rest }, easeEach: "sine.inOut" };
-            for (let j = 1, s = s0 + step; s < s1 - step / 2; j++, s += step) keys[`${(((s - s0) / (s1 - s0)) * 100).toFixed(3)}%`] = { [prop]: valueAt(j, s) };
-            to(el, s0, s1, { keyframes: keys });
-          };
+          const { ATOMS, BONDS, env, COL, ID, BIT, fmt, KEYS, ENVK, BITSTR, chipHTML, miniSVG, chapter, backdrop, world } = emaki; // kit.js
+          const S0 = 71.2, S1 = 86.4; // story seconds, like every time below
+          const { q, svg, div, put, at, tl, from, to, show, wave, caption } = chapter("folding", S0);
           const BACK = "back.out(1.9)", RED = "#ff5d5d";
 
           // ---------- background ----------
-          const bg = q("#folding-bg").getContext("2d");
-          const grad = bg.createRadialGradient(960, 454, 100, 960, 540, 1200);
-          grad.addColorStop(0, "#111b33"); grad.addColorStop(1, "#05070d");
-          bg.fillStyle = grad; bg.fillRect(0, 0, 1920, 1080);
-          bg.fillStyle = "rgba(120,140,190,0.07)";
-          for (let x = 40; x < 1920; x += 60) for (let y = 40; y < 1080; y += 60) bg.fillRect(x, y, 2, 2);
+          backdrop(q("#folding-bg"));
 
           // ---------- the molecule: a ghost behind the cards, then the source of the collision ----------
           const cam = q("#folding-cam");
@@ -86,18 +52,8 @@
             return { g, lines, dots };
           });
           const glows = BONDS.map(([i, j]) => svg("line", { x1: ATOMS[i].x, y1: ATOMS[i].y, x2: ATOMS[j].x, y2: ATOMS[j].y, stroke: RED, "stroke-width": 44, "stroke-linecap": "round", filter: "url(#folding-glow)" }, cam));
-          BONDS.forEach(([i, j, order]) => {
-            const A = ATOMS[i], B = ATOMS[j], L = Math.hypot(B.x - A.x, B.y - A.y);
-            for (const off of order === 2 ? [-8, 8] : [0]) { const nx = ((B.y - A.y) / L) * off, ny = ((A.x - B.x) / L) * off;
-              svg("line", { x1: A.x + nx, y1: A.y + ny, x2: B.x + nx, y2: B.y + ny, stroke: "#c8d0e0", "stroke-width": 7, "stroke-linecap": "round" }, cam); }
-          });
-          const atoms = ATOMS.map((a) => {
-            const halo = svg("circle", { cx: a.x, cy: a.y, r: 62, fill: "none", stroke: RED }, cam);
-            const disc = svg("circle", { cx: a.x, cy: a.y, r: 50, fill: "url(#folding-atomfill)", stroke: "#3a4a74", "stroke-width": 3 }, cam);
-            svg("text", { x: a.x, y: a.y + 2, "text-anchor": "middle", "dominant-baseline": "central", "font-family": "Inter", "font-weight": 800, "font-size": a.text.length > 1 ? 34 : 40,
-              fill: a.el === "O" ? "#ff7b7b" : a.el === "N" ? "#6cbcff" : "#eef1f7" }, cam).textContent = a.text;
-            return { halo, disc };
-          });
+          const atoms = world(cam, svg, "url(#folding-atomfill)");
+          gsap.set(atoms.map((a) => a.halo), { attr: { stroke: RED } });
           const steps = reach.map(({ e }) => [...e.bonds].map((b) => {
             const [i, j] = BONDS[b], x = (ATOMS[i].x + ATOMS[j].x) / 2, y = (ATOMS[i].y + ATOMS[j].y) / 2, g = svg("g", {}, cam);
             svg("circle", { cx: x, cy: y, r: 25, fill: RED, stroke: "#0b0f1a", "stroke-width": 5 }, g);
@@ -166,7 +122,7 @@
           // ---------- one column per identifier: card, chip, integer, "mod 16 = bit" ----------
           const stackOff = (k) => (k === "e" ? -26 : k === "h" ? 26 : 0); // the two that share bit 9
           KEYS.forEach((k, i) => {
-            const col = div(q("#folding-cols"), "col");
+            const col = div(q("#folding-cols"), "anchor");
             const card = div(col, "p ecard", `${miniSVG(k)}<div class="rad">radius ${ENVK[k][1]}</div>`);
             const num = div(col, "p num", fmt(ID(k)));
             const mod = div(col, "p num mod", `mod 16 = <span style="color:${COL[k]}">${BIT[k]}</span>`);
@@ -194,20 +150,9 @@
           });
 
           // ---------- captions ----------
-          function caption(s0, s1, { tag, title, sub, alert }) {
-            const el = div(q("#folding-caps"), "cap" + (alert ? " alert" : ""));
-            const words = (text) => text.match(/\S+\s*/g).map((w) => `<span class="w">${w}</span>`).join("");
-            if (tag) show(div(el, "tag", tag), s0, s1, 1, 0.4, 0.45);
-            div(el, "title", words(title)); div(el, "sub", words(sub));
-            el.querySelectorAll(".w").forEach((w, n) => {
-              from(w, s0 + n * 0.045, s0 + n * 0.045 + 0.5, { opacity: 0, y: 26 }, { opacity: 1, y: 0 }, "power2.out");
-              to(w, s1 - 0.45, s1, { opacity: 0, y: -10 }, "power2.out");
-            });
-            if (alert) wave(el, "x", s0, s0 + 0.6, Math.PI / 60, 0, (j, t) => (j % 2 ? 6 : -6) * (1 - (t - s0) / 0.6));
-          }
-          caption(71.2, 79.0, { tag: "04 · FOLDING", title: "Squeeze into a fixed length", sub: "bit = identifier mod 16   (mod 2048 in practice)" });
-          caption(79.2, 82.7, { alert: true, title: "Collision", sub: "CH₃–C and C–NH–C: different substructures, same bit 9." });
-          caption(82.9, S1, { title: "This is all the model sees", sub: "No counts. No positions. No way to undo a collision." });
+          caption(q("#folding-caps"), 71.2, 79.0, { tag: "04 · FOLDING", title: "Squeeze into a fixed length", sub: "bit = identifier mod 16   (mod 2048 in practice)" });
+          caption(q("#folding-caps"), 79.2, 82.7, { alert: true, title: "Collision", sub: "CH₃–C and C–NH–C: different substructures, same bit 9." });
+          caption(q("#folding-caps"), 82.9, S1, { title: "This is all the model sees", sub: "No counts. No positions. No way to undo a collision." });
 
           window.__timelines["folding"] = tl;
         })();

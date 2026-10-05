@@ -1,7 +1,8 @@
 // ============================================================================
 // What every chapter of Inside ECFP4 shares: the film's tempo, the molecule,
-// its identifiers and the small drawings made from them. No DOM access, so the
-// page can load it in <head>; that is also how a sub-composition opened on its
+// its identifiers, the small drawings made from them and the helpers a chapter
+// is built with. Nothing touches the DOM while it loads, so the page can load
+// it in <head>; that is also how a sub-composition opened on its
 // own in Studio gets it. Everything hangs off one global, `emaki`.
 // ============================================================================
 window.emaki = window.emaki || (() => {
@@ -96,5 +97,91 @@ window.emaki = window.emaki || (() => {
     return out + "</svg>";
   }
 
-  return { STORY_END, PLAN, T_END, story, real, ATOMS, BONDS, dist, env, COL, IDS, ID, BIT, fmt, KEYS, ENVK, BITSTR, chipHTML, shade, miniSVG };
+  // ---------- the second molecule and the comparison ----------
+  // N-ethylacetamide, CC(=O)NCC: real RDKit ECFP4 folded to 16 bits
+  const BVEC = Array.from({ length: 16 }, (_, b) => ([0, 1, 5, 6, 7, 8, 9, 10, 11, 13, 14].includes(b) ? 1 : 0));
+  const ACCIDENT = [6, 8]; // on in both, but from different substructures
+  const INTER = [...Array(16).keys()].filter((b) => BITSTR[b] && BVEC[b]);
+  const ONLY = [...Array(16).keys()].filter((b) => (BITSTR[b] || BVEC[b]) && !(BITSTR[b] && BVEC[b]));
+  const UNION = [...Array(16).keys()].filter((b) => BITSTR[b] || BVEC[b]);
+  const ATOMS_B = [...ATOMS.slice(0, 4), { ...ATOMS[4], text: "CH₂" }, { el: "C", text: "CH₃", x: 1460, y: 600 }];
+  const BONDS_B = [...BONDS, [4, 5, 1]];
+  function molSVG(atoms, bonds, h = 150) {
+    const xs = atoms.map((a) => a.x), ys = atoms.map((a) => a.y);
+    const x0 = Math.min(...xs) - 60, y0 = Math.min(...ys) - 60, w = Math.max(...xs) - x0 + 60, hh = Math.max(...ys) - y0 + 60;
+    let o = `<svg viewBox="${x0} ${y0} ${w} ${hh}" height="${h}" width="${(h * w) / hh}">`;
+    for (const [i, j, ord] of bonds) {
+      const A = atoms[i], B = atoms[j], L = Math.hypot(B.x - A.x, B.y - A.y);
+      for (const off of ord === 2 ? [-10, 10] : [0]) { const nx = ((B.y - A.y) / L) * off, ny = ((A.x - B.x) / L) * off;
+        o += `<line x1="${A.x + nx}" y1="${A.y + ny}" x2="${B.x + nx}" y2="${B.y + ny}" stroke="#c8d0e0" stroke-width="10" stroke-linecap="round"/>`; }
+    }
+    for (const a of atoms) o += `<circle cx="${a.x}" cy="${a.y}" r="50" fill="#121a2d" stroke="#3a4a74" stroke-width="5"/><text x="${a.x}" y="${a.y + 2}" text-anchor="middle" dominant-baseline="central" font-family="Inter" font-weight="800" font-size="${a.text.length > 1 ? 38 : 46}" fill="${a.el === "O" ? "#ff7b7b" : a.el === "N" ? "#6cbcff" : "#eef1f7"}">${a.text}</text>`;
+    return o + "</svg>";
+  }
+
+  // ---------- building a chapter ----------
+  // A chapter is a sub-composition (compositions/<name>.html). chapter("folding", 71.2) gives its
+  // script what it builds the picture and the timeline with. Every time passed to at / from / to /
+  // show / wave / caption is in story seconds, the storyboard's clock (PLAN above).
+  function chapter(id, S0) {
+    // by composition id: once mounted in the film, the chapter's root is the host's clip element
+    const root = document.querySelector(`[data-composition-id="${id}"]`);
+    const q = (s) => root.querySelector(s);
+    const svg = (tag, attrs, parent) => { const e = document.createElementNS("http://www.w3.org/2000/svg", tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; };
+    const div = (parent, cls, html = "") => { const e = document.createElement("div"); e.className = cls; e.innerHTML = html; parent.appendChild(e); return e; };
+    // .p boxes sit at (x, y), centred on that point
+    const put = (el, x, y, more = {}) => gsap.set(el, { xPercent: -50, yPercent: -50, x, y, ...more });
+    const at = (s) => real(s) - real(S0); // story seconds → seconds inside this clip
+    const tl = gsap.timeline({ paused: true });
+    const from = (el, s0, s1, a, b, ease = "none") => tl.fromTo(el, a, { ...b, duration: at(s1) - at(s0), ease }, at(s0));
+    const to = (el, s0, s1, b, ease = "none") => tl.to(el, { ...b, duration: at(s1) - at(s0), ease }, at(s0));
+    // appear at s0, disappear by s1
+    const show = (el, s0, s1, o = 1, fi = 0.35, fo = 0.35) => { from(el, s0, s0 + fi, { opacity: 0 }, { opacity: o }, "power2.out"); to(el, s1 - fo, s1, { opacity: 0 }, "power2.out"); };
+    // an oscillation between s0 and s1 as keyframes: valueAt(j, s) gives the j-th key, `step` story seconds apart
+    const wave = (el, prop, s0, s1, step, rest, valueAt) => {
+      const keys = { "0%": { [prop]: rest }, "100%": { [prop]: rest }, easeEach: "sine.inOut" };
+      for (let j = 1, s = s0 + step; s < s1 - step / 2; j++, s += step) keys[`${(((s - s0) / (s1 - s0)) * 100).toFixed(3)}%`] = { [prop]: valueAt(j, s) };
+      to(el, s0, s1, { keyframes: keys });
+    };
+    // a caption (.cap in style.css): the words rise in one after another and leave together
+    const caption = (layer, s0, s1, { tag, title, sub, alert }) => {
+      const el = div(layer, "cap" + (alert ? " alert" : ""));
+      const words = (text) => text.match(/\S+\s*/g).map((w) => `<span class="w">${w}</span>`).join("");
+      if (tag) show(div(el, "tag", tag), s0, s1, 1, 0.4, 0.45);
+      div(el, "title", words(title)); div(el, "sub", words(sub));
+      el.querySelectorAll(".w").forEach((w, n) => {
+        from(w, s0 + n * 0.045, s0 + n * 0.045 + 0.5, { opacity: 0, y: 26 }, { opacity: 1, y: 0 }, "power2.out");
+        to(w, s1 - 0.45, s1, { opacity: 0, y: -10 }, "power2.out");
+      });
+      if (alert) wave(el, "x", s0, s0 + 0.6, Math.PI / 60, 0, (j, t) => (j % 2 ? 6 : -6) * (1 - (t - s0) / 0.6));
+    };
+    return { root, q, svg, div, put, at, tl, from, to, show, wave, caption };
+  }
+  // the film's still background, painted once on a 1920×1080 canvas
+  function backdrop(canvas) {
+    const c = canvas.getContext("2d"), grad = c.createRadialGradient(960, 454, 100, 960, 540, 1200);
+    grad.addColorStop(0, "#111b33"); grad.addColorStop(1, "#05070d");
+    c.fillStyle = grad; c.fillRect(0, 0, 1920, 1080);
+    c.fillStyle = "rgba(120,140,190,0.07)";
+    for (let x = 40; x < 1920; x += 60) for (let y = 40; y < 1080; y += 60) c.fillRect(x, y, 2, 2);
+  }
+  // the molecule in world coordinates, drawn into an svg <g>; `fill` paints the atom discs.
+  // Returns one { halo, disc } per atom for a chapter to light up.
+  function world(g, svg, fill) {
+    BONDS.forEach(([i, j, order]) => {
+      const A = ATOMS[i], B = ATOMS[j], L = Math.hypot(B.x - A.x, B.y - A.y);
+      for (const off of order === 2 ? [-8, 8] : [0]) { const nx = ((B.y - A.y) / L) * off, ny = ((A.x - B.x) / L) * off;
+        svg("line", { x1: A.x + nx, y1: A.y + ny, x2: B.x + nx, y2: B.y + ny, stroke: "#c8d0e0", "stroke-width": 7, "stroke-linecap": "round" }, g); }
+    });
+    return ATOMS.map((a) => {
+      const halo = svg("circle", { cx: a.x, cy: a.y, r: 62, fill: "none", "stroke-width": 0 }, g);
+      const disc = svg("circle", { cx: a.x, cy: a.y, r: 50, fill, stroke: "#3a4a74", "stroke-width": 3 }, g);
+      svg("text", { x: a.x, y: a.y + 2, "text-anchor": "middle", "dominant-baseline": "central", "font-family": "Inter", "font-weight": 800, "font-size": a.text.length > 1 ? 34 : 40,
+        fill: a.el === "O" ? "#ff7b7b" : a.el === "N" ? "#6cbcff" : "#eef1f7" }, g).textContent = a.text;
+      return { halo, disc };
+    });
+  }
+
+  return { STORY_END, PLAN, T_END, story, real, ATOMS, BONDS, dist, env, COL, IDS, ID, BIT, fmt, KEYS, ENVK, BITSTR, chipHTML, shade, miniSVG,
+    BVEC, ACCIDENT, INTER, ONLY, UNION, ATOMS_B, BONDS_B, molSVG, chapter, backdrop, world };
 })();
