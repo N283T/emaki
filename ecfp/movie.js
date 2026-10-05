@@ -720,7 +720,7 @@ addEventListener("keydown", (ev) => {
 });
 window.seek = (s) => { t = real(s); drawn = s; render(s); }; // takes story time
 // what tools/render.py drives: the length in seconds and a way to draw any moment of it
-window.komaokuri = { duration: T_END, renderAt: (sec) => { t = clamp(sec, 0, T_END); drawn = story(t); render(drawn); } };
+window.emaki = { duration: T_END, renderAt: (sec) => { t = clamp(sec, 0, T_END); drawn = story(t); render(drawn); } };
 const q = new URLSearchParams(location.search).get("t"); if (q) t = +q;
 document.fonts?.ready.then(() => { drawn = null; }); // the canvas text is drawn again in the loaded font
 requestAnimationFrame((n) => { last = n; frame(n); });
