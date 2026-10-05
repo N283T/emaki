@@ -12,8 +12,8 @@ together with the code that renders the animation.
 |---|---|
 | [ecfp](ecfp/) | How ECFP4 turns a molecule into a folded bit vector, and what Tanimoto similarity makes of it |
 
-Each animation is a single HTML file with no build step. Open it in a browser, or serve the
-repository locally:
+Each animation is a directory with `index.html`, `style.css` and `movie.js`, and no build step.
+Serve the repository locally and open the directory in a browser:
 
 ```bash
 python3 -m http.server
