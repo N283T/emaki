@@ -79,3 +79,7 @@ html, body { margin: 0; height: 100%; background: transparent; color: var(--fg);
 #big { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 #big div { width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,.12); backdrop-filter: blur(6px);
   display: flex; align-items: center; justify-content: center; font-size: 48px; padding-left: 8px; border: 1px solid rgba(255,255,255,.25); }
+
+/* ?capture: only the picture, square corners */
+.capture #controls, .capture #big { display: none; }
+.capture #viewport { border-radius: 0; }

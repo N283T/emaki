@@ -3,7 +3,9 @@
 // of the time t, so the timeline can be scrubbed (and later captured frame by
 // frame). Identifiers and hash values are illustrative, not RDKit's.
 // ============================================================================
-const CTRL_H = 50; // control bar + gap under the video
+// ?capture: the page is only the 16:9 picture, drawn on request (tools/render.py records it)
+const CAPTURE = new URLSearchParams(location.search).has("capture");
+const CTRL_H = CAPTURE ? 0 : 50; // control bar + gap under the video
 const W = 1920, H = 1080, STORY_END = 99.4;
 // real time → story time: the intro cuts straight to the molecule, the unfolded scene runs slower
 // tempo per scene (story seconds per real second); the intro jumps straight to the molecule
@@ -682,6 +684,7 @@ function render(t) {
 // ---------- player ----------
 let t = 0, playing = false, last = 0, drawn = null;
 const vp = $("#viewport"), stage = $("#stage");
+if (CAPTURE) document.documentElement.classList.add("capture");
 function fit() {
   const k = Math.min(innerWidth / W, (innerHeight - CTRL_H) / H);
   vp.style.width = `${W * k}px`; vp.style.height = `${H * k}px`; stage.style.transform = `scale(${k})`;
@@ -694,7 +697,7 @@ const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart
 function frame(now) {
   if (playing) { t += (now - last) / 1000; if (t >= T_END) { t = T_END; setPlay(false); } }
   last = now;
-  const shown = t === 0 && !playing ? 1.2 : story(t); // poster frame: the title card
+  const shown = t === 0 && !playing && !CAPTURE ? 1.2 : story(t); // poster frame: the title card
   if (shown !== drawn) { // a paused movie draws nothing: a frame costs most of a CPU core
     drawn = shown;
     render(shown);
@@ -716,6 +719,8 @@ addEventListener("keydown", (ev) => {
   if (ev.key === "ArrowLeft") t = Math.max(0, t - 2);
 });
 window.seek = (s) => { t = real(s); drawn = s; render(s); }; // takes story time
+// what tools/render.py drives: the length in seconds and a way to draw any moment of it
+window.komaokuri = { duration: T_END, renderAt: (sec) => { t = clamp(sec, 0, T_END); drawn = story(t); render(drawn); } };
 const q = new URLSearchParams(location.search).get("t"); if (q) t = +q;
 document.fonts?.ready.then(() => { drawn = null; }); // the canvas text is drawn again in the loaded font
 requestAnimationFrame((n) => { last = n; frame(n); });
