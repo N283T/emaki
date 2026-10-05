@@ -26,7 +26,7 @@
           const { q, tl, from, caption, molecule, rain } = chapter("intro", S0);
 
           rain(q("#intro-bg"), S1, (t) => fade(t, 0, 2.4, 0.3, 0.4));
-          caption(q("#intro-caps"), 0.1, 2.3, { hero: true, title: "Inside ECFP4", sub: "How a molecule becomes a bit vector" });
+          caption(q("#intro-caps"), 0.1, 2.3, { hero: true, title: "ECFP4", sub: "How a molecule becomes a bit vector" });
 
           // bonds draw in one after another, then the atoms pop onto them
           const mol = molecule(q("#intro-world"));

@@ -54,6 +54,9 @@ npm run check   # lint, runtime, layout, motion, contrast
 npm run render  # MP4
 ```
 
+The pacing is one table, `PLAN` in `kit.js`: how fast each stretch of the storyboard plays. After changing it,
+`node sync-clips.mjs` moves the clips in `index.html` to match.
+
 ## Reuse
 
 Take anything here and adapt it: change the molecule, the colors, the pacing, the language.

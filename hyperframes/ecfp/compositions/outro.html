@@ -11,8 +11,7 @@
       <style>
         #outro { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
           font-family: Inter, system-ui, sans-serif; }
-        #outro .title { font: 900 64px Inter; letter-spacing: -.03em; white-space: nowrap; }
-        #outro .title span { color: #4dabf7; }
+        #outro .title { font: 900 64px Inter; letter-spacing: -.03em; white-space: nowrap; color: #4dabf7; }
         #outro .sub { font: 500 34px Inter; color: #8b95ab; white-space: nowrap; }
       </style>
 
@@ -29,7 +28,7 @@
           const stage = q("#outro-stage");
 
           rain(q("#outro-bg"), S1, (t) => 0.6 * fade(t, 96.2, S1 + 1, 1.0, 0.1));
-          const title = div(stage, "p title", `Inside <span>ECFP4</span>`), sub = div(stage, "p sub", "radius 2 · 2048 bits · one bit per substructure, give or take a collision");
+          const title = div(stage, "p title", "ECFP4"), sub = div(stage, "p sub", "radius 2 · 2048 bits · one bit per substructure, give or take a collision");
           put(title, 960, 470, { scale: 1.6, opacity: 0 }); put(sub, 960, 590, { opacity: 0 });
           to(title, 96.4, 97.0, { opacity: 1 }, "power2.out"); to(sub, 97.0, 97.6, { opacity: 1 }, "power2.out");
           window.__timelines["outro"] = tl;

@@ -1,5 +1,5 @@
 // ============================================================================
-// What every chapter of Inside ECFP4 shares: the film's tempo, the molecule,
+// What every chapter of the ECFP4 film shares: the film's tempo, the molecule,
 // its identifiers, the small drawings made from them and the helpers a chapter
 // is built with. Nothing touches the DOM while it loads, so the page can load
 // it in <head>; that is also how a sub-composition opened on its
@@ -7,23 +7,28 @@
 // ============================================================================
 window.emaki = window.emaki || (() => {
   const STORY_END = 99.4;
-  // real time → story time: the intro cuts straight to the molecule, the unfolded scene runs slower
-  // tempo per scene (story seconds per real second); the intro jumps straight to the molecule
+  // The storyboard is written in story seconds; PLAN says how fast each stretch of it plays
+  // (story seconds per second of film). To change the pacing, edit the rates here and run
+  // `node sync-clips.mjs`, which moves the clips in index.html to match. The story skips 2.3 → 10.
   const PLAN = [
-    { s0: 0, s1: 2.3, rate: 2.2 },       // title card, about a second
-    { s0: 10.0, s1: 14.2, rate: 2.5 },   // molecule draws in
-    { s0: 14.2, s1: 30.9, rate: 1.1 },   // atom invariants
-    { s0: 30.9, s1: 50.9, rate: 0.95 },
+    { s0: 0, s1: 2.3, rate: 1.4 },       // title card
+    { s0: 10.0, s1: 14.2, rate: 2.0 },   // molecule draws in
+    { s0: 14.2, s1: 30.9, rate: 0.95 },  // radius 0
+    { s0: 30.9, s1: 50.9, rate: 0.85 },  // radius 1
     { s0: 50.9, s1: 53.7, rate: 3.0 },   // skip the empty beat before radius 2
-    { s0: 53.7, s1: 64.8, rate: 0.95 },  // radius 1 and 2
-    { s0: 64.8, s1: 66.2, rate: 1.1 },
-    { s0: 66.2, s1: 71.2, rate: 1.25 },  // unfolded cards
-    { s0: 71.2, s1: 76.0, rate: 1.1 },   // folding
-    { s0: 76.0, s1: 79.0, rate: 4.0 },   // (nothing happens here any more)
-    { s0: 79.0, s1: 86.4, rate: 1.1 },   // collision, bit vector
-    { s0: 86.4, s1: 96.0, rate: 1.0 },   // Tanimoto
-    { s0: 96.0, s1: STORY_END, rate: 1.3 },
+    { s0: 53.7, s1: 64.8, rate: 0.85 },  // radius 2
+    { s0: 64.8, s1: 66.2, rate: 0.95 },
+    { s0: 66.2, s1: 71.2, rate: 1.05 },  // unfolded cards
+    { s0: 71.2, s1: 76.0, rate: 0.95 },  // folding
+    { s0: 76.0, s1: 79.0, rate: 4.0 },   // skip: the chips have landed, nothing moves
+    { s0: 79.0, s1: 86.4, rate: 0.95 },  // collision, bit vector
+    { s0: 86.4, s1: 96.0, rate: 0.9 },   // Tanimoto
+    { s0: 96.0, s1: STORY_END, rate: 1.0 },
   ];
+  // the chapters, as [composition id, first story second, last]. The similarity chapter runs
+  // 0.6 s past the start of the outro, over which it fades out.
+  const CHAPTERS = [["intro", 0, 14.2], ["radius0", 14.2, 30.9], ["radius1", 30.9, 51.6], ["radius2", 51.6, 64.8], ["unfolded", 64.8, 71.2],
+    ["folding", 71.2, 86.4], ["similarity", 86.4, 96.6], ["outro", 96.0, STORY_END]];
   let _r = 0;
   const SEGS = PLAN.map((p) => { const g = { r0: _r, s0: p.s0, rate: p.rate }; _r += (p.s1 - p.s0) / p.rate; return g; });
   const T_END = _r;
@@ -356,6 +361,6 @@ window.emaki = window.emaki || (() => {
     });
   }
 
-  return { STORY_END, PLAN, T_END, story, real, ATOMS, BONDS, dist, env, COL, IDS, ID, BIT, fmt, KEYS, ENVK, BITSTR, chipHTML, shade, miniSVG,
+  return { STORY_END, PLAN, CHAPTERS, T_END, story, real, ATOMS, BONDS, dist, env, COL, IDS, ID, BIT, fmt, KEYS, ENVK, BITSTR, chipHTML, shade, miniSVG,
     BVEC, ACCIDENT, INTER, ONLY, UNION, ATOMS_B, BONDS_B, molSVG, VIEW, BACK, AMBER, RED, rnd, fade, chapter, backdrop, world };
 })();

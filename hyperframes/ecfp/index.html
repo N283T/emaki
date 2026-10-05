@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=1920, height=1080" />
-    <title>Inside ECFP4</title>
+    <title>ECFP4</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="style.css" />
@@ -11,17 +11,17 @@
     <script src="kit.js"></script>
   </head>
   <body>
-    <div id="root" data-composition-id="main" data-start="0" data-duration="80.9" data-width="1920" data-height="1080">
+    <div id="root" data-composition-id="main" data-start="0" data-duration="92.737" data-width="1920" data-height="1080">
       <!-- One clip per chapter, each a sub-composition. A clip's start is the film time of its first
-           story second (real() in kit.js). The outro starts under the end of the similarity chapter. -->
-      <div id="el-intro" class="clip" data-composition-id="intro" data-composition-src="compositions/intro.html" data-start="0" data-duration="2.725" data-track-index="1" data-width="1920" data-height="1080"></div>
-      <div id="el-radius0" class="clip" data-composition-id="radius0" data-composition-src="compositions/radius0.html" data-start="2.725" data-duration="15.182" data-track-index="1" data-width="1920" data-height="1080"></div>
-      <div id="el-radius1" class="clip" data-composition-id="radius1" data-composition-src="compositions/radius1.html" data-start="17.907" data-duration="21.286" data-track-index="1" data-width="1920" data-height="1080"></div>
-      <div id="el-radius2" class="clip" data-composition-id="radius2" data-composition-src="compositions/radius2.html" data-start="39.193" data-duration="12.384" data-track-index="1" data-width="1920" data-height="1080"></div>
-      <div id="el-unfolded" class="clip" data-composition-id="unfolded" data-composition-src="compositions/unfolded.html" data-start="51.577" data-duration="5.273" data-track-index="1" data-width="1920" data-height="1080"></div>
-      <div id="el-folding" class="clip" data-composition-id="folding" data-composition-src="compositions/folding.html" data-start="56.85" data-duration="11.841" data-track-index="1" data-width="1920" data-height="1080"></div>
-      <div id="el-outro" class="clip" data-composition-id="outro" data-composition-src="compositions/outro.html" data-start="78.291" data-duration="2.609" data-track-index="1" data-width="1920" data-height="1080"></div>
-      <div id="el-similarity" class="clip" data-composition-id="similarity" data-composition-src="compositions/similarity.html" data-start="68.691" data-duration="10.062" data-track-index="2" data-width="1920" data-height="1080"></div>
+           story second; `node sync-clips.mjs` sets them from the tempo table in kit.js. The outro starts under the end of the similarity chapter. -->
+      <div id="el-intro" class="clip" data-composition-id="intro" data-composition-src="compositions/intro.html" data-start="0" data-duration="3.743" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-radius0" class="clip" data-composition-id="radius0" data-composition-src="compositions/radius0.html" data-start="3.743" data-duration="17.579" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-radius1" class="clip" data-composition-id="radius1" data-composition-src="compositions/radius1.html" data-start="21.322" data-duration="23.763" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-radius2" class="clip" data-composition-id="radius2" data-composition-src="compositions/radius2.html" data-start="45.085" data-duration="13.758" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-unfolded" class="clip" data-composition-id="unfolded" data-composition-src="compositions/unfolded.html" data-start="58.843" data-duration="6.236" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-folding" class="clip" data-composition-id="folding" data-composition-src="compositions/folding.html" data-start="65.079" data-duration="13.592" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-outro" class="clip" data-composition-id="outro" data-composition-src="compositions/outro.html" data-start="89.338" data-duration="3.399" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-similarity" class="clip" data-composition-id="similarity" data-composition-src="compositions/similarity.html" data-start="78.671" data-duration="11.267" data-track-index="2" data-width="1920" data-height="1080"></div>
     </div>
     <script>
       // every chapter animates itself; the film's own timeline has nothing to do
