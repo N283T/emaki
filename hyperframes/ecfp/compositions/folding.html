@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Chapter 04, folding: the ten identifiers drop into a 16-bit vector, two of them collide.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css (.chip, .slot, .digit, …) and the molecule data in kit.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #folding { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #folding .layer { position: absolute; inset: 0; width: 100%; height: 100%; }
+        /* .p: a box GSAP puts at (x, y), centred on that point */
+        #folding .p, #folding .col { position: absolute; left: 0; top: 0; }
+        #folding .col { width: 0; height: 0; }
+        #folding .mod { color: #eef1f7; font-weight: 700; font-size: 17px; }
+        #folding .cap { position: absolute; left: 120px; top: 84px; width: 1100px; }
+        #folding .cap .tag { font: 700 20px Inter; letter-spacing: .28em; color: #4dabf7; margin-bottom: 14px; }
+        #folding .cap .title { font: 800 60px/1.08 Inter; letter-spacing: -.025em; }
+        #folding .cap .sub { font: 400 30px/1.35 Inter; color: #8b95ab; margin-top: 14px; }
+        #folding .cap.alert .title { font-size: 96px; color: #ff5d5d; letter-spacing: .02em; text-transform: uppercase; }
+        #folding .cap .w { display: inline-block; white-space: pre; }
+      </style>
+
+      <div id="folding" data-composition-id="folding" data-width="1920" data-height="1080">
+        <canvas id="folding-bg" class="layer" width="1920" height="1080"></canvas>
+        <svg id="folding-world" class="layer" viewBox="0 0 1920 1080">
+          <defs>
+            <filter id="folding-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="9" /></filter>
+            <radialGradient id="folding-atomfill" cx="40%" cy="35%"><stop offset="0" stop-color="#23304f" /><stop offset="1" stop-color="#121a2d" /></radialGradient>
+          </defs>
+          <g id="folding-cam"></g>
+        </svg>
+        <svg id="folding-links" class="layer" viewBox="0 0 1920 1080"></svg>
+        <div id="folding-slots" class="layer"></div>
+        <div id="folding-cols" class="layer"></div>
+        <div id="folding-caps" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { real, ATOMS, BONDS, env, COL, ID, BIT, fmt, KEYS, ENVK, BITSTR, chipHTML, miniSVG } = emaki; // kit.js
+          const root = document.querySelector("#folding");
+          const q = (s) => root.querySelector(s);
+          const svg = (tag, attrs, parent) => { const e = document.createElementNS("http://www.w3.org/2000/svg", tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; };
+          const div = (parent, cls, html = "") => { const e = document.createElement("div"); e.className = cls; e.innerHTML = html; parent.appendChild(e); return e; };
+          const put = (el, x, y, more = {}) => gsap.set(el, { xPercent: -50, yPercent: -50, x, y, ...more });
+
+          // Times below are story seconds, the storyboard's clock (see PLAN in kit.js);
+          // at() turns one into seconds inside this clip.
+          const S0 = 71.2, S1 = 86.4;
+          const at = (s) => real(s) - real(S0);
+          const tl = gsap.timeline({ paused: true });
+          const from = (el, s0, s1, a, b, ease = "none") => tl.fromTo(el, a, { ...b, duration: at(s1) - at(s0), ease }, at(s0));
+          const to = (el, s0, s1, b, ease = "none") => tl.to(el, { ...b, duration: at(s1) - at(s0), ease }, at(s0));
+          // appear at s0, disappear by s1
+          const show = (el, s0, s1, o = 1, fi = 0.35, fo = 0.35) => { from(el, s0, s0 + fi, { opacity: 0 }, { opacity: o }, "power2.out"); to(el, s1 - fo, s1, { opacity: 0 }, "power2.out"); };
+          // an oscillation between s0 and s1 as keyframes: valueAt(j, s) gives the j-th key, `step` story seconds apart
+          const wave = (el, prop, s0, s1, step, rest, valueAt) => {
+            const keys = { "0%": { [prop]: rest }, "100%": { [prop]: rest }, easeEach: "sine.inOut" };
+            for (let j = 1, s = s0 + step; s < s1 - step / 2; j++, s += step) keys[`${(((s - s0) / (s1 - s0)) * 100).toFixed(3)}%`] = { [prop]: valueAt(j, s) };
+            to(el, s0, s1, { keyframes: keys });
+          };
+          const BACK = "back.out(1.9)", RED = "#ff5d5d";
+
+          // ---------- background ----------
+          const bg = q("#folding-bg").getContext("2d");
+          const grad = bg.createRadialGradient(960, 454, 100, 960, 540, 1200);
+          grad.addColorStop(0, "#111b33"); grad.addColorStop(1, "#05070d");
+          bg.fillStyle = grad; bg.fillRect(0, 0, 1920, 1080);
+          bg.fillStyle = "rgba(120,140,190,0.07)";
+          for (let x = 40; x < 1920; x += 60) for (let y = 40; y < 1080; y += 60) bg.fillRect(x, y, 2, 2);
+
+          // ---------- the molecule: a ghost behind the cards, then the source of the collision ----------
+          const cam = q("#folding-cam");
+          const T0 = 79.8, T1 = 82.8; // the two colliding environments light up
+          const reach = [0, 3].map((c) => ({ c, e: env(c, 1) })); // CH3–C and C–NH–C
+          const rings = reach.map(({ c }) => svg("circle", { cx: ATOMS[c].x, cy: ATOMS[c].y, r: 62, fill: "none", stroke: RED, "stroke-width": 3, "stroke-dasharray": "10 12" }, cam));
+          const blobs = reach.map(({ c, e }) => {
+            const g = svg("g", {}, cam);
+            const lines = [...e.bonds].map((b) => { const v = BONDS[b][0] === c ? BONDS[b][1] : BONDS[b][0];
+              return { v, el: svg("line", { x1: ATOMS[c].x, y1: ATOMS[c].y, x2: ATOMS[c].x, y2: ATOMS[c].y, stroke: RED, "stroke-width": 150, "stroke-linecap": "round" }, g) }; });
+            const dots = [...e.atoms].map((a) => ({ a, el: svg("circle", { cx: ATOMS[a].x, cy: ATOMS[a].y, r: 0, fill: RED }, g) }));
+            return { g, lines, dots };
+          });
+          const glows = BONDS.map(([i, j]) => svg("line", { x1: ATOMS[i].x, y1: ATOMS[i].y, x2: ATOMS[j].x, y2: ATOMS[j].y, stroke: RED, "stroke-width": 44, "stroke-linecap": "round", filter: "url(#folding-glow)" }, cam));
+          BONDS.forEach(([i, j, order]) => {
+            const A = ATOMS[i], B = ATOMS[j], L = Math.hypot(B.x - A.x, B.y - A.y);
+            for (const off of order === 2 ? [-8, 8] : [0]) { const nx = ((B.y - A.y) / L) * off, ny = ((A.x - B.x) / L) * off;
+              svg("line", { x1: A.x + nx, y1: A.y + ny, x2: B.x + nx, y2: B.y + ny, stroke: "#c8d0e0", "stroke-width": 7, "stroke-linecap": "round" }, cam); }
+          });
+          const atoms = ATOMS.map((a) => {
+            const halo = svg("circle", { cx: a.x, cy: a.y, r: 62, fill: "none", stroke: RED }, cam);
+            const disc = svg("circle", { cx: a.x, cy: a.y, r: 50, fill: "url(#folding-atomfill)", stroke: "#3a4a74", "stroke-width": 3 }, cam);
+            svg("text", { x: a.x, y: a.y + 2, "text-anchor": "middle", "dominant-baseline": "central", "font-family": "Inter", "font-weight": 800, "font-size": a.text.length > 1 ? 34 : 40,
+              fill: a.el === "O" ? "#ff7b7b" : a.el === "N" ? "#6cbcff" : "#eef1f7" }, cam).textContent = a.text;
+            return { halo, disc };
+          });
+          const steps = reach.map(({ e }) => [...e.bonds].map((b) => {
+            const [i, j] = BONDS[b], x = (ATOMS[i].x + ATOMS[j].x) / 2, y = (ATOMS[i].y + ATOMS[j].y) / 2, g = svg("g", {}, cam);
+            svg("circle", { cx: x, cy: y, r: 25, fill: RED, stroke: "#0b0f1a", "stroke-width": 5 }, g);
+            svg("text", { x, y: y + 1, "text-anchor": "middle", "dominant-baseline": "central", "font-family": "Inter", "font-weight": 900, "font-size": 30, fill: "#0b0f1a" }, g).textContent = 1;
+            return { g, x, y };
+          }));
+
+          // the camera: centred above the cards, then pushed to the top right to make room for the vector
+          gsap.set(cam, { svgOrigin: "0 0", x: 192, y: 276, scale: 0.8, opacity: 0.07 });
+          to(cam, 79.0, 80.2, { x: 831.85, y: 45, scale: 0.55 }, "power2.inOut");
+          to(cam, 79.0, 80.0, { opacity: 1 }, "power2.inOut");
+          to(cam, 86.0, 87.0, { opacity: 0 }, "power2.inOut"); // the next chapter finishes this fade
+          gsap.set(glows, { strokeOpacity: 0 });
+          gsap.set(atoms.map((a) => a.halo), { strokeOpacity: 0, strokeWidth: 0 });
+          reach.forEach(({ c, e }, n) => {
+            show(rings[n], T0, T1, 0.75);
+            from(rings[n], T0, T0 + 0.7, { attr: { r: 62 } }, { attr: { r: 76 } }, BACK);
+            from(rings[n], T0, T1, { strokeDashoffset: 0 }, { strokeDashoffset: -(T1 - T0) * 30 });
+            show(blobs[n].g, T0, T1, 0.17);
+            for (const { v, el } of blobs[n].lines) {
+              gsap.set(el, { strokeOpacity: 0 }); tl.set(el, { strokeOpacity: 1 }, at(T0 + 0.15));
+              to(el, T0 + 0.15, T0 + 0.5, { attr: { x2: ATOMS[v].x, y2: ATOMS[v].y } }, "power2.inOut");
+            }
+            for (const { a, el } of blobs[n].dots) { const s = a === c ? T0 : T0 + 0.4; to(el, s, s + 0.3, { attr: { r: 75 } }, BACK); }
+            for (const { g, x, y } of steps[n]) { from(g, T0 + 0.45, T0 + 0.75, { svgOrigin: `${x} ${y}`, scale: 0, opacity: 0 }, { scale: 1, opacity: 1 }, BACK); to(g, T1 - 0.35, T1, { opacity: 0 }, "power2.out"); }
+            for (const b of e.bonds) { to(glows[b], T0 + 0.15, T0 + 0.5, { strokeOpacity: 0.7 }); to(glows[b], T1 - 0.35, T1, { strokeOpacity: 0 }, "power2.out"); }
+            tl.set(atoms[c].disc, { attr: { stroke: "#6cbcff" } }, at(T0 + 0.04)); tl.set(atoms[c].disc, { attr: { stroke: "#3a4a74" } }, at(T1 - 0.23));
+          });
+          [0, 3].forEach((a) => to(atoms[a].halo, T0, T0 + 0.35, { strokeOpacity: 1, strokeWidth: 8 }, "power2.out"));
+          [1, 4].forEach((a) => to(atoms[a].halo, T0 + 0.3, T0 + 0.6, { strokeOpacity: 1, strokeWidth: 8 }));
+          [0, 1, 3, 4].forEach((a) => to(atoms[a].halo, T1 - 0.35, T1, { strokeOpacity: 0, strokeWidth: 0 }, "power2.out"));
+
+          // ---------- the 16-bit vector ----------
+          const SLOT_Y = 690, COLLIDE = 9;
+          const slotX = (b) => 960 + (b - 7.5) * 106;
+          const collideEnv = (s) => Math.min(1, (s - 79.2) / 0.2, (82.8 - s) / 0.3);
+          for (let b = 0; b < 16; b++) {
+            const box = div(q("#folding-slots"), "p", `<div class="slot"></div>`), slot = box.firstChild;
+            const lbl = div(q("#folding-slots"), "p slotlbl", b);
+            const digit = div(q("#folding-slots"), "p digit", BITSTR[b]);
+            put(box, slotX(b), SLOT_Y, { scale: 0, opacity: 0 }); put(lbl, slotX(b), SLOT_Y + 86, { opacity: 0 });
+            put(digit, slotX(b), SLOT_Y, { scale: 0, opacity: 0, color: BITSTR[b] ? "#fff" : "#3a4460" });
+            const s = 71.8 + b * 0.04; // the empty slots pop in, left to right
+            to(box, s, s + 0.5, { scale: 1 }, BACK); to(box, s, s + 0.2, { opacity: 1 }); to(lbl, s, s + 0.2, { opacity: 0.9 });
+            if (b === COLLIDE) { // the bit two identifiers land on: red, glowing, shaking
+              gsap.set(slot, { boxShadow: "0 0 0px rgba(255,93,93,.55)" });
+              to(slot, 79.2, 79.4, { borderColor: RED, boxShadow: "0 0 40px rgba(255,93,93,.55)" }, "power2.out");
+              to(slot, 82.5, 82.8, { borderColor: "#2d3a5c", boxShadow: "0 0 0px rgba(255,93,93,.55)" }, "power2.out");
+              wave(slot, "x", 79.2, 82.8, Math.PI / 50, 0, (j, t) => (j % 2 ? 5 : -5) * collideEnv(t));
+            } else { // everything else steps back
+              to(box, 79.2, 79.4, { opacity: 0.45 }, "power2.out"); to(box, 82.5, 82.8, { opacity: 1 }, "power2.out");
+              to(lbl, 79.2, 79.4, { opacity: 0.405 }, "power2.out"); to(lbl, 82.5, 82.8, { opacity: 0.9 }, "power2.out");
+            }
+            const d = 83.0 + b * 0.05; // the chips are gone: what is left is a 0 or a 1
+            to(digit, d, d + 0.5, { scale: 1 }, BACK); to(digit, d, d + 0.2, { opacity: 1 });
+            if (BITSTR[b]) tl.set(slot, { backgroundColor: "rgba(77,171,247,.16)" }, at(83.0));
+          }
+          // which atoms the colliding bit came from
+          [0, 3].forEach((a) => {
+            const ax = 960 + (ATOMS[a].x - 233) * 0.55, ay = 540 + (ATOMS[a].y + 60 - 900) * 0.55, bx = slotX(COLLIDE), by = SLOT_Y;
+            const path = svg("path", { d: `M ${ax} ${ay} C ${ax} ${ay + 160}, ${bx} ${by - 260}, ${bx} ${by - 70}`, fill: "none", stroke: RED, "stroke-width": 4, pathLength: 1, "stroke-dasharray": 1 }, q("#folding-links"));
+            from(path, 79.9, 80.7, { strokeDashoffset: 1 }, { strokeDashoffset: 0 }, "power2.inOut");
+            show(path, 79.9, 82.8, 1, 0.2, 0.3);
+          });
+
+          // ---------- one column per identifier: card, chip, integer, "mod 16 = bit" ----------
+          const stackOff = (k) => (k === "e" ? -26 : k === "h" ? 26 : 0); // the two that share bit 9
+          KEYS.forEach((k, i) => {
+            const col = div(q("#folding-cols"), "col");
+            const card = div(col, "p ecard", `${miniSVG(k)}<div class="rad">radius ${ENVK[k][1]}</div>`);
+            const num = div(col, "p num", fmt(ID(k)));
+            const mod = div(col, "p num mod", `mod 16 = <span style="color:${COL[k]}">${BIT[k]}</span>`);
+            const chip = div(col, "p", chipHTML(k));
+            gsap.set(col, { x: 960 + (i - 4.5) * 158, y: 440 });
+            put(card, 0, 103); put(num, 0, 192, { scale: 0.85 }); put(mod, 0, 84.7, { scale: 0, opacity: 0 }); put(chip, 0, 0);
+
+            // the cards go, the row closes up and rises
+            to(col, 71.3, 72.7, { x: 960 + (i - 4.5) * 150, y: 330, scale: 1.05 }, "power2.inOut");
+            to(card, 71.5, 72.0, { opacity: 0 }, "power2.out"); to(card, 71.5, 72.0, { scale: 0.7 });
+            to(num, 71.4, 72.0, { y: 58 }, "power2.inOut");
+            const m = 72.9 + i * 0.06;
+            to(mod, m, m + 0.4, { scale: 1 / 1.05 }, BACK); to(mod, m, m + 0.15, { opacity: 1 });
+
+            // the chip drops into its bit
+            const drop = 74.0 + i * 0.07, small = 0.62 / 1.05;
+            to(num, drop - 0.1, drop + 0.1, { opacity: 0 }, "power2.out"); to(mod, drop, drop + 0.2, { opacity: 0 });
+            to(chip, drop, drop + 0.6, { x: (slotX(BIT[k]) - (960 + (i - 4.5) * 150)) / 1.05 }, "power2.out");
+            to(chip, drop, drop + 0.6, { y: (SLOT_Y + stackOff(k) - 330) / 1.05 }, "power2.in");
+            to(chip, drop, drop + 0.6, { scale: small });
+            to(chip, drop + 0.6, drop + 0.75, { scale: small * 1.2 }, "sine.out"); to(chip, drop + 0.75, drop + 0.9, { scale: small }, "sine.in");
+            if (stackOff(k)) wave(chip, "scale", 79.3, 82.7, Math.PI / 12, small, (j, t) => small * (1 + (j % 2 ? 0.12 : 0) * Math.min(1, (82.7 - t) / 0.7)));
+            const out = 82.9 + BIT[k] * 0.05;
+            to(chip, out, out + 0.4, { opacity: 0 });
+          });
+
+          // ---------- captions ----------
+          function caption(s0, s1, { tag, title, sub, alert }) {
+            const el = div(q("#folding-caps"), "cap" + (alert ? " alert" : ""));
+            const words = (text) => text.match(/\S+\s*/g).map((w) => `<span class="w">${w}</span>`).join("");
+            if (tag) show(div(el, "tag", tag), s0, s1, 1, 0.4, 0.45);
+            div(el, "title", words(title)); div(el, "sub", words(sub));
+            el.querySelectorAll(".w").forEach((w, n) => {
+              from(w, s0 + n * 0.045, s0 + n * 0.045 + 0.5, { opacity: 0, y: 26 }, { opacity: 1, y: 0 }, "power2.out");
+              to(w, s1 - 0.45, s1, { opacity: 0, y: -10 }, "power2.out");
+            });
+            if (alert) wave(el, "x", s0, s0 + 0.6, Math.PI / 60, 0, (j, t) => (j % 2 ? 6 : -6) * (1 - (t - s0) / 0.6));
+          }
+          caption(71.2, 79.0, { tag: "04 · FOLDING", title: "Squeeze into a fixed length", sub: "bit = identifier mod 16   (mod 2048 in practice)" });
+          caption(79.2, 82.7, { alert: true, title: "Collision", sub: "CH₃–C and C–NH–C: different substructures, same bit 9." });
+          caption(82.9, S1, { title: "This is all the model sees", sub: "No counts. No positions. No way to undo a collision." });
+
+          window.__timelines["folding"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

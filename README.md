@@ -40,6 +40,19 @@ The format follows the extension given to `-o` (`.mp4`, `.webm`, `.mov`, `.gif`)
 An animation can be recorded when its page, opened with `?capture`, shows only the picture and
 sets `window.emaki = { duration, renderAt(seconds) }`.
 
+## HyperFrames (experimental)
+
+[hyperframes/ecfp](hyperframes/ecfp/) is the same ECFP animation as a [HyperFrames](https://github.com/heygen-com/hyperframes)
+project. The folding chapter is a sub-composition built from GSAP tweens
+(`compositions/folding.html`); the other chapters are still drawn by `movie.js`, and both share `kit.js`.
+
+```bash
+cd hyperframes/ecfp
+npm run dev     # Studio preview
+npm run check   # lint, runtime, layout, motion, contrast
+npm run render  # MP4
+```
+
 ## Reuse
 
 Take anything here and adapt it: change the molecule, the colors, the pacing, the language.
