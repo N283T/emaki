@@ -43,9 +43,9 @@ sets `window.emaki = { duration, renderAt(seconds) }`.
 ## HyperFrames (experimental)
 
 [hyperframes/ecfp](hyperframes/ecfp/) is the same ECFP animation as a [HyperFrames](https://github.com/heygen-com/hyperframes)
-project. The folding and similarity chapters are sub-compositions built from GSAP tweens
-(`compositions/`); the earlier chapters and the outro are still drawn by `movie.js`. Both share
-`kit.js`: the tempo, the molecule, and the helpers a chapter is built with.
+project. `index.html` is a list of clips, one per chapter, and each chapter is a sub-composition in
+`compositions/` whose motion is GSAP tweens. They share `kit.js`: the tempo, the molecule, and the
+helpers a chapter is built with (the camera, an atom's environment lighting up, flying chips, captions).
 
 ```bash
 cd hyperframes/ecfp

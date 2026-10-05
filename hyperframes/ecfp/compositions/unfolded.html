@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- The unfolded fingerprint: the ten features rise into a row, each with its substructure and its 32-bit integer.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in kit.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #unfolded { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+      </style>
+
+      <div id="unfolded" data-composition-id="unfolded" data-width="1920" data-height="1080">
+        <canvas id="unfolded-bg" class="layer" width="1920" height="1080"></canvas>
+        <div id="unfolded-world" class="layer"></div>
+        <div id="unfolded-cols" class="layer"></div>
+        <div id="unfolded-caps" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { BACK, VIEW, KEYS, ENVK, ID, fmt, rnd, chipHTML, miniSVG, chapter, backdrop } = emaki; // kit.js
+          const S0 = 64.8, S1 = 71.2; // story seconds, like every time below
+          const { q, div, put, tl, at, to, caption, actor, fly, molecule } = chapter("unfolded", S0);
+          const cols = q("#unfolded-cols");
+
+          backdrop(q("#unfolded-bg"));
+          caption(q("#unfolded-caps"), S0, 71.0, { title: "The unfolded ECFP4", sub: "10 unique substructures, each a 32-bit integer (real RDKit values)." });
+
+          // the molecule has done its part: its identifiers go, and it fades to a ghost higher up
+          const mol = molecule(q("#unfolded-world"), { labels: ["e", "f", "g", "h", "i"] });
+          to(mol.label, 65.8, 66.6, { opacity: 0 });
+          to(mol.cam, 65.8, 67.2, { opacity: 0.07 }, "power2.inOut"); mol.move(66.0, 67.6, VIEW.high);
+
+          const lbl = div(cols, "p traylbl", "FEATURES"); put(lbl, 960 - 4.5 * 80 - 150, 1000);
+          to(lbl, 65.5, 66.0, { opacity: 0 }, "power2.out");
+
+          // one column per feature: the chip, and under it the substructure card and the integer
+          KEYS.forEach((key, i) => {
+            const x0 = 960 + (i - 4.5) * 80, col = div(cols, "anchor");
+            gsap.set(col, { x: x0, y: 1000, scale: 0.85 });
+            const card = div(col, "p ecard", `${miniSVG(key)}<div class="rad">radius ${ENVK[key][1]}</div>`);
+            const chip = actor(col, chipHTML(key), 0, 0);
+            put(card, 0, 103, { scale: 0, opacity: 0 });
+            if (key === "j") { // the last feature arrives from under the nitrogen, where the previous chapter left it
+              const [bx, by] = mol.badgeAt(3);
+              put(chip, (bx - x0) / 0.85, (by - 1000) / 0.85, { scale: 1 / 0.85 });
+              fly(chip, S0, 65.7, { x: 0, y: 0, scale: 1 }, { arc: 150, bulge: 1.2 });
+              to(chip.firstChild, 65.7, 65.85, { scale: 1.15 }, "sine.out"); to(chip.firstChild, 65.85, 66.0, { scale: 1 }, "sine.in");
+            }
+            to(col, 66.0, 67.6, { x: 960 + (i - 4.5) * 158, y: 440, scale: 1 }, "power2.inOut"); // the tray becomes a wide row
+            const c = 66.7 + i * 0.07;
+            to(card, c, c + 0.5, { scale: 1 }, BACK); to(card, c, c + 0.45, { opacity: 1 }, "power2.out");
+
+            // the integer: digits tumble for a moment, then settle on the real identifier
+            const num = div(col, "anchor"), shown = 67.8 + i * 0.07, settled = 68.25 + i * 0.05;
+            gsap.set(num, { y: 192, scale: 0.85, opacity: 0 });
+            to(num, shown, shown + 0.3, { opacity: 1 }, "power2.out");
+            const states = [];
+            for (let j = Math.floor(shown * 20); j / 20 < settled; j++) states.push([Math.max(shown, j / 20), fmt(Math.floor(rnd(i * 13 + j) * 4e9))]);
+            states.push([settled, fmt(ID(key))]);
+            states.map(([, text], n) => { const el = div(num, "p num", text); put(el, 0, 0, { opacity: n ? 0 : 1 }); return el; })
+              .forEach((el, n, all) => { if (n) { tl.set(all[n - 1], { opacity: 0 }, at(states[n][0])); tl.set(el, { opacity: 1 }, at(states[n][0])); } });
+          });
+          window.__timelines["unfolded"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

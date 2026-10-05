@@ -3,15 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <!-- Chapter 05, similarity: a second molecule's bit vector lines up under the first, and the
-         shared and the differing bits are counted into a Tanimoto score.
+         shared and the differing bits are counted into a Tanimoto score. It ends by fading out
+         over the outro, so its clip overlaps the outro's by 0.6 s.
          Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
          shared classes in style.css (.slot, .digit, .cap, …) and the data and helpers in kit.js. -->
   </head>
   <body>
     <template>
       <style>
-        #similarity { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
-          font-family: Inter, system-ui, sans-serif; }
+        /* no background of its own: at the end it fades out over the outro, which starts underneath */
+        #similarity { position: absolute; inset: 0; overflow: hidden; color: #eef1f7; font-family: Inter, system-ui, sans-serif; }
         #similarity .match { width: 104px; height: 441px; border: 3px solid #34d399; border-radius: 22px;
           background-color: rgba(52,211,153,.1); box-shadow: 0 0 24px rgba(52,211,153,.25); }
         #similarity .match.one { border: 3px dashed #4dabf7; background-color: transparent; box-shadow: none; }
@@ -23,18 +24,20 @@
       </style>
 
       <div id="similarity" data-composition-id="similarity" data-width="1920" data-height="1080">
-        <canvas id="similarity-bg" class="layer" width="1920" height="1080"></canvas>
-        <svg id="similarity-world" class="layer" viewBox="0 0 1920 1080">
-          <defs>
-            <radialGradient id="similarity-atomfill" cx="40%" cy="35%"><stop offset="0" stop-color="#23304f" /><stop offset="1" stop-color="#121a2d" /></radialGradient>
-          </defs>
-          <g id="similarity-cam"></g>
-        </svg>
-        <div id="similarity-a" class="layer"></div>
-        <div id="similarity-match" class="layer"></div>
-        <div id="similarity-b" class="layer"></div>
-        <div id="similarity-score" class="layer"></div>
-        <div id="similarity-caps" class="layer"></div>
+        <div id="similarity-all" class="layer">
+          <canvas id="similarity-bg" class="layer" width="1920" height="1080"></canvas>
+          <svg id="similarity-world" class="layer" viewBox="0 0 1920 1080">
+            <defs>
+              <radialGradient id="similarity-atomfill" cx="40%" cy="35%"><stop offset="0" stop-color="#23304f" /><stop offset="1" stop-color="#121a2d" /></radialGradient>
+            </defs>
+            <g id="similarity-cam"></g>
+          </svg>
+          <div id="similarity-a" class="layer"></div>
+          <div id="similarity-match" class="layer"></div>
+          <div id="similarity-b" class="layer"></div>
+          <div id="similarity-score" class="layer"></div>
+          <div id="similarity-caps" class="layer"></div>
+        </div>
       </div>
 
       <script>
@@ -135,6 +138,9 @@
           caption(caps, 88.7, 91.5, { tag, title: "Tanimoto similarity", sub: "bits on in both ÷ bits on in either" });
           caption(caps, 91.6, 93.5, { tag, title: "Very similar — or is it?", sub: "Short vectors mean more collisions, and collisions inflate similarity." });
           caption(caps, 93.6, S1, { tag, title: "Bits 6 and 8 match by accident", sub: "Different substructures in A and B. With 2048 bits, Tanimoto drops to 0.41." });
+
+          // the whole picture fades over the outro (the clip runs 0.6 s past S1 for this)
+          to(q("#similarity-all"), S1, S1 + 0.6, { opacity: 0 });
 
           window.__timelines["similarity"] = tl;
         })();

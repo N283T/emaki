@@ -1,39 +1,31 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=1920, height=1080">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
     <title>Inside ECFP4</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
     <script src="kit.js"></script>
   </head>
   <body>
-    <div data-hf-id="hf-05j5" id="root" data-composition-id="main" data-start="0" data-duration="80.9" data-width="1920" data-height="1080">
-      <canvas data-hf-id="hf-rzdx" id="bg" width="1920" height="1080"></canvas>
-      <svg data-hf-id="hf-mtv0" id="world" viewBox="0 0 1920 1080"><g data-hf-id="hf-y1p0" id="cam" /></svg>
-      <svg data-hf-id="hf-ud1s" id="overlay" viewBox="0 0 1920 1080" />
-      <div data-hf-id="hf-opjr" id="actors"></div>
-      <div data-hf-id="hf-un0f" id="cap"></div>
-      <!-- chapters rebuilt as sub-compositions cover the picture movie.js draws underneath -->
-      <div id="el-folding" class="clip" data-composition-id="folding" data-composition-src="compositions/folding.html" data-start="56.85" data-duration="11.841" data-track-index="5" data-width="1920" data-height="1080"></div>
-      <div id="el-similarity" class="clip" data-composition-id="similarity" data-composition-src="compositions/similarity.html" data-start="68.691" data-duration="9.6" data-track-index="5" data-width="1920" data-height="1080"></div>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="80.9" data-width="1920" data-height="1080">
+      <!-- One clip per chapter, each a sub-composition. A clip's start is the film time of its first
+           story second (real() in kit.js). The outro starts under the end of the similarity chapter. -->
+      <div id="el-intro" class="clip" data-composition-id="intro" data-composition-src="compositions/intro.html" data-start="0" data-duration="2.725" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-radius0" class="clip" data-composition-id="radius0" data-composition-src="compositions/radius0.html" data-start="2.725" data-duration="15.182" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-radius1" class="clip" data-composition-id="radius1" data-composition-src="compositions/radius1.html" data-start="17.907" data-duration="21.286" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-radius2" class="clip" data-composition-id="radius2" data-composition-src="compositions/radius2.html" data-start="39.193" data-duration="12.384" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-unfolded" class="clip" data-composition-id="unfolded" data-composition-src="compositions/unfolded.html" data-start="51.577" data-duration="5.273" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-folding" class="clip" data-composition-id="folding" data-composition-src="compositions/folding.html" data-start="56.85" data-duration="11.841" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-outro" class="clip" data-composition-id="outro" data-composition-src="compositions/outro.html" data-start="78.291" data-duration="2.609" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-similarity" class="clip" data-composition-id="similarity" data-composition-src="compositions/similarity.html" data-start="68.691" data-duration="10.062" data-track-index="2" data-width="1920" data-height="1080"></div>
     </div>
-    <script src="movie.js"></script>
     <script>
-      // HyperFrames seeks this timeline frame by frame; the one tween only gives it its length, and
-      // the picture is drawn from the timeline's own time, so any frame can be reached in any order.
-      document.fonts.ready.then(() => { // the canvas text needs the loaded font
-        const tl = gsap.timeline({ paused: true });
-        tl.to({ t: 0 }, { t: 1, duration: T_END, ease: "none" }, 0);
-        CHAPTERS.forEach(([s, name]) => tl.addLabel(name, real(s)));
-        tl.eventCallback("onUpdate", () => render(story(clamp(tl.time(), 0, T_END))));
-        render(story(0));
-        window.__timelines["main"] = tl;
-        window.__hfForceTimelineRebind?.();
-      });
+      // every chapter animates itself; the film's own timeline has nothing to do
+      window.__timelines["main"] = gsap.timeline({ paused: true });
     </script>
   </body>
 </html>

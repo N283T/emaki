@@ -119,6 +119,17 @@ window.emaki = window.emaki || (() => {
     return o + "</svg>";
   }
 
+  // ---------- shared numbers ----------
+  // camera views: the world point at the centre of the frame, and the zoom
+  const VIEW = { wide: { cx: 960, cy: 430, s: 1 }, methyl: { cx: 1066, cy: 470, s: 1.55 }, carbonyl: { cx: 1000, cy: 380, s: 1.3 },
+    high: { cx: 960, cy: 330, s: 0.8 }, corner: { cx: 233, cy: 900, s: 0.55 } };
+  const BACK = "back.out(1.9)", AMBER = "#ffb547", RED = "#ff5d5d";
+  // a repeatable stand-in for Math.random
+  const rnd = (i) => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+  // 0 → 1 → 0 between a and b, for things drawn from the time itself
+  const fade = (t, a, b, fi = 0.4, fo = 0.4) => { const P = (x, u, v) => Math.min(1, Math.max(0, (x - u) / (v - u))), out = (x) => 1 - Math.pow(1 - x, 3);
+    return Math.min(out(P(t, a, a + fi)), 1 - out(P(t, b - fo, b))); };
+
   // ---------- building a chapter ----------
   // A chapter is a sub-composition (compositions/<name>.html). chapter("folding", 71.2) gives its
   // script what it builds the picture and the timeline with. Every time passed to at / from / to /
@@ -143,10 +154,12 @@ window.emaki = window.emaki || (() => {
       for (let j = 1, s = s0 + step; s < s1 - step / 2; j++, s += step) keys[`${(((s - s0) / (s1 - s0)) * 100).toFixed(3)}%`] = { [prop]: valueAt(j, s) };
       to(el, s0, s1, { keyframes: keys });
     };
-    // a caption (.cap in style.css): the words rise in one after another and leave together
-    const caption = (layer, s0, s1, { tag, title, sub, alert }) => {
-      const el = div(layer, "cap" + (alert ? " alert" : ""));
-      const words = (text) => text.match(/\S+\s*/g).map((w) => `<span class="w">${w}</span>`).join("");
+    // a caption (.cap in style.css): the words rise in one after another and leave together.
+    // [a] in the text becomes the chip of that identifier.
+    const caption = (layer, s0, s1, { tag, title, sub, alert, hero }) => {
+      const el = div(layer, "cap" + (alert ? " alert" : hero ? " hero" : ""));
+      const chips = (text) => text.replace(/\[([a-k])\]/g, (_, key) => `<span class="k" style="background:${COL[key]}">${key}</span>`);
+      const words = (text) => chips(text).split(/(?<=\s)(?![^<]*>)/).map((w) => `<span class="w">${w}</span>`).join("");
       if (tag) show(div(el, "tag", tag), s0, s1, 1, 0.4, 0.45);
       div(el, "title", words(title)); div(el, "sub", words(sub));
       el.querySelectorAll(".w").forEach((w, n) => {
@@ -155,7 +168,168 @@ window.emaki = window.emaki || (() => {
       });
       if (alert) wave(el, "x", s0, s0 + 0.6, Math.PI / 60, 0, (j, t) => (j % 2 ? 6 : -6) * (1 - (t - s0) / 0.6));
     };
-    return { root, q, svg, div, put, at, tl, from, to, show, wave, caption };
+
+    // ----- actors: boxes on the screen that travel -----
+    // an actor is a .p box whose content sits in a child, so the content can arc and swell while the box travels
+    const actor = (layer, html, x, y, more = {}) => { const el = div(layer, "p", `<div>${html}</div>`); put(el, x, y, more); return el; };
+    const fly = (el, s0, s1, dest, { arc = 0, bulge = 1, ease = "power2.inOut" } = {}) => {
+      const mid = (s0 + s1) / 2;
+      to(el, s0, s1, dest, ease);
+      to(el.firstChild, s0, mid, { y: -arc, scale: bulge }, "sine.out"); to(el.firstChild, mid, s1, { y: 0, scale: 1 }, "sine.in");
+    };
+    const chip = (parent, key, { grey = false, size = 1, hidden = false } = {}) => {
+      const el = div(parent, "p", chipHTML(key, grey ? "grey" : "")); put(el, 0, 0, { scale: size, opacity: hidden ? 0 : 1 }); return el;
+    };
+    // the spinning hexagon that stands for the hash function, on screen from s0 to s1
+    let hashes = 0;
+    const hashIcon = (layer, x, y, s0, s1) => {
+      const g = `${id}-hash${hashes++}`;
+      const el = div(layer, "p", `<div class="hash"><svg viewBox="0 0 150 150"><defs><linearGradient id="${g}" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#4dabf7"/><stop offset="1" stop-color="#a855f7"/></linearGradient></defs>
+        <polygon points="75,8 133,41 133,109 75,142 17,109 17,41" fill="#0f1830" stroke="url(#${g})" stroke-width="5"/></svg><span>hash</span></div>`);
+      put(el, x, y, { scale: 0, opacity: 0 });
+      to(el, s0, s0 + 0.3, { scale: 1, opacity: 1 }, "power2.out"); to(el, s1 - 0.3, s1, { scale: 0, opacity: 0 }, "power2.out");
+      from(el.querySelector("svg"), s0, s1, { rotation: s0 * 90 }, { rotation: s1 * 90 });
+      wave(el.firstChild, "scale", s0, s1, Math.PI / 18, 1, (j) => 1 + (j % 2 ? 0.08 : -0.08));
+    };
+    // the row of collected features along the bottom; the first `have` are already there
+    const tray = (layer, have = 0) => {
+      const xy = (i) => [960 + (i - 4.5) * 80, 1000];
+      const lbl = div(layer, "p traylbl", "FEATURES"); put(lbl, 960 - 4.5 * 80 - 150, 1000, { opacity: have ? 1 : 0 });
+      const chips = KEYS.map((key, i) => actor(layer, chipHTML(key), ...xy(i), { scale: 0.85, opacity: i < have ? 1 : 0 }));
+      // chip i leaves the screen point `start` at s and lands in its place, with a little bounce
+      const collect = (i, s, start) => {
+        const el = chips[i];
+        gsap.set(el, { x: start[0], y: start[1], scale: 1 }); tl.set(el, { opacity: 1 }, at(s));
+        fly(el, s, s + 0.9, { x: xy(i)[0], y: xy(i)[1], scale: 0.85 }, { arc: 150, bulge: 1.2 });
+        to(el.firstChild, s + 0.9, s + 1.05, { scale: 1.15 }, "sine.out"); to(el.firstChild, s + 1.05, s + 1.2, { scale: 1 }, "sine.in");
+      };
+      return { lbl, chips, xy, collect };
+    };
+
+    // ----- the molecule on a camera -----
+    // `labels` are the identifiers already under the atoms; `view` is where the camera starts.
+    const molecule = (layer, { labels = [], view = VIEW.wide } = {}) => {
+      const cam = div(layer, "anchor");
+      const s = svg("svg", { class: "world", viewBox: "0 0 1920 1080", width: 1920, height: 1080 }, cam);
+      svg("defs", {}, s).innerHTML = `<filter id="${id}-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="9"/></filter>
+        <radialGradient id="${id}-atomfill" cx="40%" cy="35%"><stop offset="0" stop-color="#23304f"/><stop offset="1" stop-color="#121a2d"/></radialGradient>`;
+      const under = svg("g", {}, s);
+      const bonds = BONDS.map(([i, j, order]) => {
+        const A = ATOMS[i], B = ATOMS[j], L = Math.hypot(B.x - A.x, B.y - A.y), g = svg("g", {}, s);
+        const els = (order === 2 ? [-8, 8] : [0]).map((off) => { const nx = ((B.y - A.y) / L) * off, ny = ((A.x - B.x) / L) * off;
+          return svg("line", { x1: A.x + nx, y1: A.y + ny, x2: B.x + nx, y2: B.y + ny, stroke: "#c8d0e0", "stroke-width": 7, "stroke-linecap": "round", "stroke-dasharray": L }, g); });
+        return { g, els, L };
+      });
+      const halos = svg("g", {}, s);
+      const atoms = ATOMS.map((a) => {
+        const g = svg("g", {}, s);
+        const disc = svg("circle", { cx: a.x, cy: a.y, r: 50, fill: `url(#${id}-atomfill)`, stroke: "#3a4a74", "stroke-width": 3 }, g);
+        svg("text", { x: a.x, y: a.y + 2, "text-anchor": "middle", "dominant-baseline": "central", "font-family": "Inter", "font-weight": 800, "font-size": a.text.length > 1 ? 34 : 40,
+          fill: a.el === "O" ? "#ff7b7b" : a.el === "N" ? "#6cbcff" : "#eef1f7" }, g).textContent = a.text;
+        gsap.set(g, { svgOrigin: `${a.x} ${a.y}` });
+        return { g, disc };
+      });
+      const over = svg("g", {}, s);
+      // identifiers hang under each atom (above the oxygen), the next round's a little further out
+      const labelXY = (n) => [ATOMS[n].x, ATOMS[n].y + ATOMS[n].dir * 84];
+      const badgeXY = (n) => (ATOMS[n].dir < 0 ? [ATOMS[n].x + 76, ATOMS[n].y - 84] : [ATOMS[n].x, ATOMS[n].y + 158]);
+      const pin = ([x, y]) => { const el = div(cam, "anchor"); gsap.set(el, { x, y }); return el; };
+      const label = ATOMS.map((_, n) => pin(labelXY(n))), badge = ATOMS.map((_, n) => pin(badgeXY(n))), pins = [...label, ...badge];
+      const chips = labels.map((key, n) => chip(label[n], key));
+      // chips grow less than the picture when the camera zooms: zoom^0.6 on screen
+      const pose = (v) => ({ x: 960 - v.cx * v.s, y: 540 - v.cy * v.s, scale: v.s }), counter = (v) => Math.pow(v.s, -0.4);
+      gsap.set(cam, pose(view)); gsap.set(pins, { scale: counter(view) });
+      const screen = (x, y, v = VIEW.wide) => [960 + (x - v.cx) * v.s, 540 + (y - v.cy) * v.s];
+      const gone = (el, s1, vars) => to(el, s1 - 0.35, s1, vars, "power2.out");
+
+      return { cam, bonds, atoms, label, badge,
+        screen, labelAt: (n, v) => screen(...labelXY(n), v), badgeAt: (n, v) => screen(...badgeXY(n), v), chipSize: (v) => Math.pow(v.s, 0.6),
+        move: (s0, s1, v) => { to(cam, s0, s1, pose(v), "power2.inOut"); to(pins, s0, s1, { scale: counter(v) }, "power2.inOut"); },
+        // everything but the atoms in `keep` steps back between s0 and s1
+        dim: (s0, s1, keep) => {
+          const off = ATOMS.map((_, n) => n).filter((n) => !keep.includes(n));
+          const els = [...off.map((n) => atoms[n].g), ...off.map((n) => label[n]), ...bonds.filter((_, n) => off.includes(BONDS[n][0]) || off.includes(BONDS[n][1])).map((b) => b.g)];
+          to(els, s0, s0 + 0.5, { opacity: 0.15 }, "power2.out"); to(els, s1 - 0.5, s1, { opacity: 1 }, "power2.out");
+        },
+        // the environment of atom c out to radius r lights up from s0 to s1: it spreads bond by bond,
+        // counting the steps, so its size is a graph distance and not a distance on the page
+        reach: (c, r, s0, s1, red = false) => {
+          const col = red ? RED : AMBER, d = dist(c), e = env(c, r), C = ATOMS[c];
+          const ring = svg("circle", { cx: C.x, cy: C.y, r: 62, fill: "none", stroke: red ? RED : "#6cbcff", "stroke-width": 3, "stroke-dasharray": "10 12" }, under);
+          show(ring, s0, s1, 0.75);
+          from(ring, s0, s0 + 0.7, { attr: { r: 62 } }, { attr: { r: 76 } }, BACK);
+          from(ring, s0, s1, { strokeDashoffset: -s0 * 30 }, { strokeDashoffset: -s1 * 30 });
+          const blob = svg("g", {}, under);
+          show(blob, s0, s1, 0.17);
+          for (const b of e.bonds) {
+            let [u, v] = BONDS[b]; if (d[u] > d[v]) [u, v] = [v, u];
+            const A = ATOMS[u], B = ATOMS[v], lv = d[u], g0 = s0 + 0.15 + lv * 0.4, x = (A.x + B.x) / 2, y = (A.y + B.y) / 2;
+            const line = svg("line", { x1: A.x, y1: A.y, x2: A.x, y2: A.y, stroke: col, "stroke-width": 150, "stroke-linecap": "round", "stroke-opacity": 0 }, blob);
+            tl.set(line, { attr: { "stroke-opacity": 1 } }, at(g0)); to(line, g0, g0 + 0.35, { attr: { x2: B.x, y2: B.y } }, "power2.inOut");
+            const glow = svg("line", { x1: A.x, y1: A.y, x2: B.x, y2: B.y, stroke: col, "stroke-width": 44, "stroke-linecap": "round", "stroke-opacity": 0, filter: `url(#${id}-glow)` }, under);
+            to(glow, g0, g0 + 0.35, { attr: { "stroke-opacity": 0.7 } }); gone(glow, s1, { attr: { "stroke-opacity": 0 } });
+            const step = svg("g", {}, over);
+            svg("circle", { cx: x, cy: y, r: 25, fill: col, stroke: "#0b0f1a", "stroke-width": 5 }, step);
+            svg("text", { x, y: y + 1, "text-anchor": "middle", "dominant-baseline": "central", "font-family": "Inter", "font-weight": 900, "font-size": 30, fill: "#0b0f1a" }, step).textContent = lv + 1;
+            from(step, g0 + 0.3, g0 + 0.6, { svgOrigin: `${x} ${y}`, scale: 0, opacity: 0 }, { scale: 1, opacity: 1 }, BACK); gone(step, s1, { opacity: 0 });
+          }
+          for (const a of e.atoms) {
+            const A = ATOMS[a], n = d[a], g1 = n ? s0 + 0.4 + (n - 1) * 0.4 : s0, h0 = n ? s0 + 0.3 + (n - 1) * 0.4 : s0;
+            to(svg("circle", { cx: A.x, cy: A.y, r: 0, fill: col }, blob), g1, g1 + 0.3, { attr: { r: 75 } }, BACK);
+            const halo = svg("circle", { cx: A.x, cy: A.y, r: 62, fill: "none", stroke: red ? RED : n ? AMBER : "#4dabf7", "stroke-width": 0, "stroke-opacity": 0 }, halos);
+            to(halo, h0, h0 + 0.3, { attr: { "stroke-width": 8, "stroke-opacity": 1 } }); gone(halo, s1, { attr: { "stroke-width": 0, "stroke-opacity": 0 } });
+          }
+          tl.set(atoms[c].disc, { attr: { stroke: "#6cbcff" } }, at(s0 + 0.04)); tl.set(atoms[c].disc, { attr: { stroke: "#3a4a74" } }, at(s1 - 0.23));
+        },
+        // atom n gets its identifier at s
+        pop: (n, key, s, bounce = true) => {
+          const el = (chips[n] = chip(label[n], key, { hidden: true }));
+          tl.set(el, { opacity: 1 }, at(s)); if (bounce) from(el.firstChild, s, s + 0.5, { scale: 0 }, { scale: 1 }, BACK);
+        },
+        // atom n's identifier turns over into a new one at s
+        flip: (n, key, s) => {
+          const old = chips[n], el = (chips[n] = chip(label[n], key, { hidden: true })), mid = s + 0.25;
+          to(old, s, mid, { scaleX: 0 }, "sine.in"); to(old.firstChild, s, mid, { scale: 1.25 }, "sine.out");
+          tl.set(old, { opacity: 0 }, at(mid)); tl.set(el, { opacity: 1 }, at(mid));
+          from(el, mid, s + 0.5, { scaleX: 0 }, { scaleX: 1 }, "sine.out"); from(el.firstChild, mid, s + 0.5, { scale: 1.25 }, { scale: 1 }, "sine.in");
+        },
+        // the identifier atom n will get next waits below its current one from s0 to s1.
+        // A grey one is a duplicate about to be dropped: it falls away, with `stamp` saying of what.
+        next: (n, key, s0, s1, { grey = false, bounce = true, stamp } = {}) => {
+          const el = chip(badge[n], key, { grey, size: 0.9, hidden: true });
+          tl.set(el, { opacity: 1 }, at(s0)); if (bounce) from(el.firstChild, s0, s0 + 0.45, { scale: 0 }, { scale: 1 }, BACK);
+          if (!grey) { tl.set(el, { opacity: 0 }, at(s1)); return; }
+          to(el, s1 - 0.35, s1, { opacity: 0 }); to(el, s1 - 0.35, s1, { y: 40 }, "power2.in");
+          const mark = div(badge[n], "p", `<div class="stamp">DUPLICATE ${stamp[0]}</div>`);
+          put(mark, 170, 0, { rotation: -9, scale: 2.4, opacity: 0 });
+          to(mark, stamp[1], stamp[1] + 0.25, { scale: 1, opacity: 1 }, "power2.out"); to(mark, s1 - 0.35, s1, { opacity: 0 });
+        },
+      };
+    };
+
+    // binary rain over the backdrop, as strong as strength(story seconds) says. It is drawn from the
+    // timeline's own time on every update, the one thing here that is not a tween; S1 is the clip's end.
+    const rain = (canvas, S1, strength) => {
+      const c = canvas.getContext("2d");
+      const draw = () => {
+        backdrop(canvas);
+        const t = story(real(S0) + tl.time()), k = strength(t);
+        if (k <= 0) return;
+        c.font = "500 22px 'JetBrains Mono', monospace";
+        for (let col = 0; col < 64; col++) {
+          const speed = 60 + rnd(col) * 140, off = rnd(col + 99) * 1080;
+          for (let r = 0; r < 14; r++) {
+            c.fillStyle = `rgba(110,170,255,${k * (1 - r / 14) * 0.35 * rnd(col * 7 + r)})`;
+            c.fillText(rnd(col * 31 + r + Math.floor(t * 3)) > 0.5 ? "1" : "0", col * 30 + 6, ((t * speed + off + r * 30) % 1480) - 200);
+          }
+        }
+      };
+      tl.to({}, { duration: at(S1) }, 0); // keeps the timeline, and with it this drawing, running to the end of the clip
+      tl.eventCallback("onUpdate", draw); draw();
+    };
+
+    return { root, q, svg, div, put, at, tl, from, to, show, wave, caption, actor, fly, chip, hashIcon, tray, molecule, rain };
+
   }
   // the film's still background, painted once on a 1920×1080 canvas
   function backdrop(canvas) {
@@ -183,5 +357,5 @@ window.emaki = window.emaki || (() => {
   }
 
   return { STORY_END, PLAN, T_END, story, real, ATOMS, BONDS, dist, env, COL, IDS, ID, BIT, fmt, KEYS, ENVK, BITSTR, chipHTML, shade, miniSVG,
-    BVEC, ACCIDENT, INTER, ONLY, UNION, ATOMS_B, BONDS_B, molSVG, chapter, backdrop, world };
+    BVEC, ACCIDENT, INTER, ONLY, UNION, ATOMS_B, BONDS_B, molSVG, VIEW, BACK, AMBER, RED, rnd, fade, chapter, backdrop, world };
 })();

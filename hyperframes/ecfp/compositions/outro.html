@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- End card. It starts under the last 0.6 s of the similarity chapter, which fades out over it.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in kit.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #outro { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #outro .title { font: 900 64px Inter; letter-spacing: -.03em; white-space: nowrap; }
+        #outro .title span { color: #4dabf7; }
+        #outro .sub { font: 500 34px Inter; color: #8b95ab; white-space: nowrap; }
+      </style>
+
+      <div id="outro" data-composition-id="outro" data-width="1920" data-height="1080">
+        <canvas id="outro-bg" class="layer" width="1920" height="1080"></canvas>
+        <div id="outro-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { STORY_END, chapter, fade } = emaki; // kit.js
+          const S0 = 96.0, S1 = STORY_END; // story seconds, like every time below
+          const { q, div, put, tl, to, rain } = chapter("outro", S0);
+          const stage = q("#outro-stage");
+
+          rain(q("#outro-bg"), S1, (t) => 0.6 * fade(t, 96.2, S1 + 1, 1.0, 0.1));
+          const title = div(stage, "p title", `Inside <span>ECFP4</span>`), sub = div(stage, "p sub", "radius 2 · 2048 bits · one bit per substructure, give or take a collision");
+          put(title, 960, 470, { scale: 1.6, opacity: 0 }); put(sub, 960, 590, { opacity: 0 });
+          to(title, 96.4, 97.0, { opacity: 1 }, "power2.out"); to(sub, 97.0, 97.6, { opacity: 1 }, "power2.out");
+          window.__timelines["outro"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>
