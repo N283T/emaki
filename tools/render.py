@@ -8,7 +8,7 @@
     uv run tools/render.py ecfp -o ecfp.webm --fps 60
     uv run tools/render.py ecfp -o clip.gif --start 30 --end 36 --width 960
 
-The page is opened with ?capture and asked to draw each moment through window.komaokuri
+The page is opened with ?capture and asked to draw each moment through window.emaki
 ({duration, renderAt(seconds)}), so the result does not depend on how fast the machine is.
 The container follows the output extension (mp4, webm, mov, gif). Uses the installed Chrome,
 or Playwright's Chromium (`uv run --with playwright playwright install chromium`).
@@ -86,14 +86,14 @@ def main() -> None:
         browser = _browser(p)
         page = browser.new_page(viewport={"width": W, "height": H})
         page.goto(f"http://127.0.0.1:{server.server_port}/?capture")
-        page.wait_for_function("window.komaokuri")
+        page.wait_for_function("window.emaki")
         page.evaluate("document.fonts.ready")
-        end = min(args.end or float("inf"), page.evaluate("komaokuri.duration"))
+        end = min(args.end or float("inf"), page.evaluate("emaki.duration"))
         frames = round((end - args.start) * args.fps)
         encoder = _encoder(output, args.fps, args.width)
         assert encoder.stdin
         for i in range(frames):
-            page.evaluate("t => komaokuri.renderAt(t)", args.start + i / args.fps)
+            page.evaluate("t => emaki.renderAt(t)", args.start + i / args.fps)
             encoder.stdin.write(page.screenshot())
             if i % args.fps == 0:
                 print(

@@ -1,9 +1,9 @@
-# komaokuri
+# emaki
 
 Step-by-step animations of chem/bio informatics algorithms.
 
-*Komaokuri* (コマ送り) is Japanese for advancing a film one frame at a time.
-Each entry in this repository takes one algorithm and shows it one step at a time,
+An *emaki* (絵巻) is a Japanese picture scroll: a story told in pictures, read as the scroll
+is unrolled. Each entry in this repository takes one algorithm and shows it one step at a time,
 together with the code that renders the animation.
 
 ## Animations
@@ -38,7 +38,7 @@ uv run tools/render.py ecfp
 The format follows the extension given to `-o` (`.mp4`, `.webm`, `.mov`, `.gif`). `--fps`, `--width`, `--start` and `--end` change the frame rate, the size and the range.
 
 An animation can be recorded when its page, opened with `?capture`, shows only the picture and
-sets `window.komaokuri = { duration, renderAt(seconds) }`.
+sets `window.emaki = { duration, renderAt(seconds) }`.
 
 ## Reuse
 
