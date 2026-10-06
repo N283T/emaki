@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 02, radius 1: each atom hashes its own identifier with its neighbours', and all update together.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in kit.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #radius1 { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+      </style>
+
+      <div data-hf-id="hf-t16f" id="radius1" data-composition-id="radius1" data-width="1920" data-height="1080">
+        <canvas data-hf-id="hf-lf5t" id="radius1-bg" class="layer" width="1920" height="1080"></canvas>
+        <div data-hf-id="hf-yeef" id="radius1-world" class="layer"></div>
+        <div data-hf-id="hf-8m0x" id="radius1-stage" class="layer"></div>
+        <div data-hf-id="hf-3572" id="radius1-caps" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { BACK, VIEW, chipHTML, chapter, backdrop } = emaki; // kit.js
+          const S0 = 30.9, S1 = 51.6; // story seconds, like every time below
+          const { q, div, put, tl, at, to, show, caption, actor, fly, hashIcon, tray, molecule } = chapter("radius1", S0);
+          const stage = q("#radius1-stage"), caps = q("#radius1-caps"), tag = "02 · RADIUS 1";
+
+          backdrop(q("#radius1-bg"));
+          const mol = molecule(q("#radius1-world"), { labels: ["a", "b", "c", "d", "a"] }), features = tray(stage, 4);
+
+          // ---------- the carbonyl carbon: own identifier + sorted (bond, neighbour) pairs → hash ----------
+          caption(caps, 30.9, 40.5, { tag, title: "Look one bond further", sub: "Own identifier + sorted (bond, neighbour) pairs → hash." });
+          const V = VIEW.carbonyl, FY = 520, HASH = [1770, FY], resting = [features.lbl, ...features.chips.slice(0, 4)];
+          mol.move(31.0, 32.2, V); mol.dim(31.4, 40.3, [0, 1, 2, 3]); mol.reach(1, 1, 31.6, 40.2);
+          to(resting, 31.0, 31.6, { opacity: 0.2 }, "power2.out"); to(resting, 40.2, 40.8, { opacity: 1 }, "power2.out");
+          // copies of the identifiers leave their atoms and line up as a formula
+          const own = actor(stage, chipHTML("b"), ...mol.labelAt(1, V), { scale: mol.chipSize(V), opacity: 0 });
+          tl.set(own, { opacity: 1 }, at(33.0)); fly(own, 33.0, 33.6, { x: 1190, y: FY, scale: 1.3 }, { arc: 80 });
+          const plus = div(stage, "p", `<div class="plus">+</div>`); put(plus, 1262, FY); show(plus, 33.6, 37.6, 1, 0.3, 0.3);
+          const slotX = (i) => 1350 + i * 150, SORTED = [2, 0, 1]; // the place of each pair once sorted: a, d, c
+          const pairs = [["=", "c", 2], ["–", "a", 0], ["–", "d", 3]].map(([bond, key, atom], n) => {
+            const pair = actor(stage, `<div class="pair">${bond}${chipHTML(key)}</div>`, ...mol.labelAt(atom, V), { scale: 0.6, opacity: 0 }), s = 33.8 + n * 0.6;
+            tl.set(pair, { opacity: 1 }, at(s)); fly(pair, s, s + 0.6, { x: slotX(n), y: FY, scale: 1 }, { arc: 90 });
+            fly(pair, 36.0, 36.9, { x: slotX(SORTED[n]) }, { arc: SORTED[n] > n ? 110 : -70 }); // sorting: they hop over each other
+            return pair;
+          });
+          // everything goes into the hash, and the new identifier comes out to wait below the old one
+          [own, ...pairs].forEach((el, n) => { to(el, 37.2, 37.9, { x: HASH[0], y: HASH[1], scale: n ? 0.3 : 0.39 }, "power2.in"); to(el, 37.3, 37.9, { opacity: 0 }); });
+          hashIcon(stage, ...HASH, 36.9, 39.1);
+          const result = actor(stage, chipHTML("f"), ...HASH, { scale: 0, opacity: 0 });
+          tl.set(result, { opacity: 1 }, at(38.5)); to(result, 38.5, 38.85, { scale: 1.4 }, BACK);
+          const [bx, by] = mol.badgeAt(1, V);
+          fly(result, 38.9, 39.6, { x: bx, y: by, scale: mol.chipSize(V) * 0.9 }, { arc: 140 });
+          tl.set(result, { opacity: 0 }, at(39.6)); mol.next(1, "f", 39.6, 45.7, { bounce: false });
+          mol.move(40.3, 41.3, VIEW.wide);
+
+          // ---------- every atom does the same, from the old identifiers; then all are replaced at once ----------
+          caption(caps, 40.7, 47.0, { tag, title: "Every atom does the same", sub: "Using the old identifiers — then all update together." });
+          [[0, "e", 41.4], [2, "g", 42.2], [3, "h", 43.0], [4, "i", 43.8]].forEach(([n, key, s]) => { mol.reach(n, 1, s, s + 0.9); mol.next(n, key, s + 0.4, 45.5 + n * 0.2); });
+          ["e", "f", "g", "h", "i"].forEach((key, n) => mol.flip(n, key, 45.5 + n * 0.2));
+
+          // ---------- the two methyls now differ; five new features ----------
+          caption(caps, 47.2, 50.8, { tag, title: "Now the methyls differ", sub: "One sits next to C=O, the other next to N." });
+          mol.reach(0, 1, 47.2, 50.4); mol.reach(4, 1, 47.2, 50.4);
+          [0, 1, 2, 3, 4].forEach((n) => features.collect(4 + n, 49.6 + n * 0.2, mol.labelAt(n)));
+          window.__timelines["radius1"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

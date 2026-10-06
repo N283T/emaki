@@ -3,14 +3,10 @@
   --amber: #ffb547; --blue: #4dabf7; --red: #ff5d5d; --card: #121a2d;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; background: transparent; color: var(--fg); overflow: hidden;
+html, body { margin: 0; width: 1920px; height: 1080px; background: var(--bg0); color: var(--fg); overflow: hidden;
   font-family: Inter, system-ui, sans-serif; }
-/* the video and its control bar are separate blocks; the bar sits under the frame */
-#player { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 6px; }
-#viewport { position: relative; overflow: hidden; background: var(--bg0); border-radius: 12px; flex: none; }
-#stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; }
-#bg, #world, #overlay { position: absolute; inset: 0; width: 1920px; height: 1080px; }
-.a { position: absolute; left: 0; top: 0; will-change: transform, opacity; }
+#root { position: relative; width: 100%; height: 100%; overflow: hidden; background: var(--bg0); }
+#root > .clip { position: absolute; inset: 0; width: 100%; height: 100%; }
 
 /* chips */
 .chip { width: 64px; height: 64px; border-radius: 16px; display: flex; align-items: center; justify-content: center;
@@ -46,40 +42,21 @@ html, body { margin: 0; height: 100%; background: transparent; color: var(--fg);
 .digit { font: 700 62px "JetBrains Mono", monospace; }
 
 .traylbl { font: 700 18px Inter; letter-spacing: .22em; color: var(--muted); }
-.modtxt { font: 500 22px "JetBrains Mono", monospace; color: var(--fg); white-space: nowrap;
-  background: rgba(13,20,36,.92); padding: 6px 12px; border-radius: 10px; border: 1px solid #2d3a5c; }
 
-/* captions */
-#cap { position: absolute; left: 120px; top: 84px; width: 1100px; }
-#cap .tag { font: 700 20px Inter; letter-spacing: .28em; color: var(--blue); margin-bottom: 14px; }
-#cap .title { font: 800 60px/1.08 Inter; letter-spacing: -.025em; }
-#cap .sub { font: 400 30px/1.35 Inter; color: var(--muted); margin-top: 14px; }
-#cap.center { left: 0; width: 1920px; top: 390px; text-align: center; }
-#cap.center .title { font-size: 84px; }
-#cap.hero { left: 0; width: 1920px; top: 360px; text-align: center; }
-#cap.hero .title { font-size: 180px; font-weight: 900; letter-spacing: -.045em; color: #fff; text-shadow: 0 0 60px rgba(77,171,247,.45); }
-#cap.hero .title .w:last-child { color: #6cbcff; }
-#cap.hero .sub { font-size: 40px; margin-top: 10px; }
-#cap.alert .title { font-size: 96px; color: var(--red); letter-spacing: .02em; text-transform: uppercase; }
-#cap .w { display: inline-block; white-space: pre; }
 .k { display: inline-block; padding: 0 .28em; border-radius: .22em; color: #fff; font-weight: 800; }
 
-.bits { font: 700 104px "JetBrains Mono", monospace; letter-spacing: .06em; white-space: nowrap; }
-.bits span { display: inline-block; }
-
-/* controls */
-#controls { width: 100%; max-width: var(--vw); height: 44px; flex: none; display: flex; align-items: flex-start; gap: 14px; padding: 2px 4px 0; color: #8a93a6; font-size: 13px; }
-#controls button { background: none; border: 0; color: #8a93a6; font-size: 20px; line-height: 22px; padding: 0; cursor: pointer; width: 32px; }
-#bar { position: relative; flex: 1; height: 22px; cursor: pointer; }
-#bar .track { position: absolute; left: 0; right: 0; top: 9px; height: 4px; background: #2a3148; border-radius: 2px; }
-#bar .fill { position: absolute; left: 0; top: 9px; height: 4px; background: var(--blue); border-radius: 2px; }
-#bar .tick { position: absolute; top: 5px; width: 2px; height: 12px; background: #56607a; }
-#bar .tick span { position: absolute; top: 14px; left: 4px; white-space: nowrap; font-size: 11px; color: #7c869d; }
-#time { font-variant-numeric: tabular-nums; min-width: 92px; text-align: right; line-height: 22px; }
-#big { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-#big div { width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,.12); backdrop-filter: blur(6px);
-  display: flex; align-items: center; justify-content: center; font-size: 48px; padding-left: 8px; border: 1px solid rgba(255,255,255,.25); }
-
-/* ?capture: only the picture, square corners */
-.capture #controls, .capture #big { display: none; }
-.capture #viewport { border-radius: 0; }
+/* chapters (sub-compositions in compositions/) */
+.layer { position: absolute; inset: 0; width: 100%; height: 100%; }
+.p, .anchor { position: absolute; left: 0; top: 0; }  /* .p: put at (x, y) by GSAP, centred on it */
+.anchor { width: 0; height: 0; }                       /* a point that carries a group of .p boxes */
+.cap { position: absolute; left: 120px; top: 84px; width: 1100px; }
+.cap .tag { font: 700 20px Inter; letter-spacing: .28em; color: var(--blue); margin-bottom: 14px; }
+.cap .title { font: 800 60px/1.08 Inter; letter-spacing: -.025em; }
+.cap .sub { font: 400 30px/1.35 Inter; color: var(--muted); margin-top: 14px; }
+.cap.alert .title { font-size: 96px; color: var(--red); letter-spacing: .02em; text-transform: uppercase; }
+.cap .w { display: inline-block; white-space: pre; }
+.cap.hero { left: 0; width: 1920px; top: 360px; text-align: center; }
+.cap.hero .title { font-size: 180px; font-weight: 900; letter-spacing: -.045em; color: #fff; text-shadow: 0 0 60px rgba(77,171,247,.45); }
+.cap.hero .title .w:last-child { color: #6cbcff; }
+.cap.hero .sub { font-size: 40px; margin-top: 10px; }
+.world { position: absolute; left: 0; top: 0; overflow: visible; }  /* the molecule's svg, inside its camera */

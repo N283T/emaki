@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 05, similarity: a second molecule's bit vector lines up under the first, and the
+         shared and the differing bits are counted into a Tanimoto score. It ends by fading out
+         over the outro, so its clip overlaps the outro's by 0.6 s.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css (.slot, .digit, .cap, …) and the data and helpers in kit.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        /* no background of its own: at the end it fades out over the outro, which starts underneath */
+        #similarity { position: absolute; inset: 0; overflow: hidden; color: #eef1f7; font-family: Inter, system-ui, sans-serif; }
+        #similarity .match { width: 104px; height: 441px; border: 3px solid #34d399; border-radius: 22px;
+          background-color: rgba(52,211,153,.1); box-shadow: 0 0 24px rgba(52,211,153,.25); }
+        #similarity .match.one { border: 3px dashed #4dabf7; background-color: transparent; box-shadow: none; }
+        #similarity .dot { width: 22px; height: 22px; border-radius: 50%; }
+        #similarity .big { font: 800 54px Inter; white-space: nowrap; }
+        #similarity .count { font: 800 52px "JetBrains Mono", monospace; white-space: nowrap; }
+        #similarity .bar { width: 250px; height: 5px; border-radius: 3px; background: #eef1f7; }
+        #similarity .note { font: 700 34px/1.35 Inter; white-space: nowrap; color: #8b95ab; text-align: center; }
+      </style>
+
+      <div data-hf-id="hf-ud59" id="similarity" data-composition-id="similarity" data-width="1920" data-height="1080">
+        <div data-hf-id="hf-iulm" id="similarity-all" class="layer">
+          <canvas data-hf-id="hf-oo7p" id="similarity-bg" class="layer" width="1920" height="1080"></canvas>
+          <svg data-hf-id="hf-pomu" id="similarity-world" class="layer" viewBox="0 0 1920 1080">
+            <defs data-hf-id="hf-mh0t">
+              <radialgradient data-hf-id="hf-7t1m" id="similarity-atomfill" cx="40%" cy="35%"><stop data-hf-id="hf-1c4e" offset="0" stop-color="#23304f" /><stop data-hf-id="hf-p9ra" offset="1" stop-color="#121a2d" /></radialgradient>
+            </defs>
+            <g data-hf-id="hf-j2g8" id="similarity-cam" />
+          </svg>
+          <div data-hf-id="hf-7jei" id="similarity-a" class="layer"></div>
+          <div data-hf-id="hf-f06c" id="similarity-match" class="layer"></div>
+          <div data-hf-id="hf-3lah" id="similarity-b" class="layer"></div>
+          <div data-hf-id="hf-n0hh" id="similarity-score" class="layer"></div>
+          <div data-hf-id="hf-4fii" id="similarity-caps" class="layer"></div>
+        </div>
+      </div>
+
+      <script>
+        (() => {
+          const { ATOMS, BONDS, ATOMS_B, BONDS_B, BITSTR, BVEC, ACCIDENT, INTER, ONLY, UNION, molSVG, chapter, backdrop, world } = emaki; // kit.js
+          const S0 = 86.4, S1 = 96.0; // story seconds, like every time below
+          const { q, svg, div, put, at, tl, from, to, wave, caption } = chapter("similarity", S0);
+          const BACK = "back.out(1.9)", RED = "#ff5d5d", GREEN = "#34d399", BLUE = "#6cbcff";
+          const pop = (el, s, o = 1, size = 1) => { to(el, s, s + 0.5, { scale: size }, BACK); to(el, s, s + 0.2, { opacity: o }); };
+
+          backdrop(q("#similarity-bg"));
+
+          // ---------- the molecule from the last chapter finishes fading out ----------
+          const cam = q("#similarity-cam");
+          world(cam, svg, "url(#similarity-atomfill)");
+          const inOut = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+          gsap.set(cam, { svgOrigin: "0 0", x: 831.85, y: 45, scale: 0.55 });
+          // the fade began 0.4 s before this clip; this is the rest of the same ease
+          from(cam, S0, 87.0, { opacity: 1 - inOut(0.4) }, { opacity: 0 }, (p) => (inOut(0.4 + 0.6 * p) - inOut(0.4)) / (1 - inOut(0.4)));
+
+          // ---------- two rows of bits ----------
+          const ROW_A = 470, ROW_B = 715, MID = (ROW_A + ROW_B) / 2, SIZE = 0.85;
+          const colX = (b) => 1130 + (b - 7.5) * 90;
+          const tint = (slot, on, border) => gsap.set(slot, { backgroundColor: on ? "rgba(77,171,247,.16)" : "rgba(18,26,45,.85)", ...(on && border ? { borderColor: "#4dabf7" } : {}) });
+          const row = (layer, bits, b) => {
+            const box = div(layer, "p", `<div class="slot"></div>`), lbl = div(layer, "p slotlbl", b), digit = div(layer, "p digit", bits[b]);
+            gsap.set(digit, { color: bits[b] ? "#fff" : "#3a4460" });
+            return { box, lbl, digit };
+          };
+          for (let b = 0; b < 16; b++) {
+            // A is the vector the last chapter ended on; it shrinks and moves up and right
+            const A = row(q("#similarity-a"), BITSTR, b), x0 = 960 + (b - 7.5) * 106;
+            tint(A.box.firstChild, BITSTR[b]);
+            put(A.box, x0, 690); put(A.digit, x0, 690); put(A.lbl, x0, 690 + 86, { opacity: 0.9 });
+            to([A.box, A.digit], S0, 87.2, { x: colX(b), y: ROW_A, scale: SIZE }, "power2.inOut");
+            to(A.lbl, S0, 87.2, { x: colX(b), y: ROW_A + 86 * SIZE, scale: SIZE }, "power2.inOut");
+            // B slides in from the right, bit by bit
+            const B = row(q("#similarity-b"), BVEC, b), s = 87.3 + b * 0.035;
+            tint(B.box.firstChild, BVEC[b], true);
+            put(B.box, colX(b), ROW_B, { scale: SIZE }); put(B.digit, colX(b), ROW_B, { scale: SIZE }); put(B.lbl, colX(b), ROW_B + 73, { scale: SIZE });
+            from([B.box, B.digit], s, s + 0.5, { x: colX(b) + 240, opacity: 0 }, { x: colX(b), opacity: 1 }, "power2.out");
+            from(B.lbl, s, s + 0.5, { x: colX(b) + 240, opacity: 0 }, { x: colX(b), opacity: 0.9 }, "power2.out");
+          }
+          // each row's molecule and name, on the left
+          const side = (html, cls, y0, y1, s, size = 1) => {
+            const el = div(q("#similarity-b"), "p " + cls, html);
+            put(el, 230, y0, { scale: size, opacity: 0 });
+            if (y1 !== y0) to(el, S0, 87.2, { y: y1 }, "power2.inOut"); // follows row A up
+            to(el, s, s + 0.5, { opacity: 1 }, "power2.out");
+          };
+          side(molSVG(ATOMS, BONDS), "", 690 - 10, ROW_A - 10, 86.8);
+          side("A · N-METHYLACETAMIDE", "traylbl", 690 + 92, ROW_A + 92, 86.8, 0.8);
+          side(molSVG(ATOMS_B, BONDS_B), "", ROW_B - 10, ROW_B - 10, 87.3);
+          side("B · N-ETHYLACETAMIDE", "traylbl", ROW_B + 92, ROW_B + 92, 87.3, 0.8);
+
+          // ---------- which bits count ----------
+          // on in both: green, solid. On in only one: blue, dashed. They appear in that order.
+          const accident = (s) => Math.min(1, (s - 93.6) / 0.3, (S1 - s) / 0.3);
+          [...INTER.map((b, k) => [b, 88.9 + k * 0.13, true]), ...ONLY.map((b, k) => [b, 90.3 + k * 0.13, false])].forEach(([b, s, both]) => {
+            const el = div(q("#similarity-match"), "p", `<div class="match${both ? "" : " one"}"></div>`), box = el.firstChild;
+            put(el, colX(b), MID, { scale: 0, opacity: 0 });
+            to(el, s, s + 0.35, { scale: SIZE }, BACK); to(el, s, s + 0.1, { opacity: 1 });
+            if (!ACCIDENT.includes(b)) return;
+            // these two match by accident: different substructures in A and B folded onto one bit
+            to(box, 93.6, 93.9, { borderColor: RED, backgroundColor: "rgba(52,211,153,.18)", boxShadow: "0 0 36px rgba(255,93,93,.6)" }, "power2.out");
+            to(box, S1 - 0.3, S1, { borderColor: GREEN, backgroundColor: "rgba(52,211,153,.1)", boxShadow: "0 0 24px rgba(52,211,153,.25)" }, "power2.out");
+            wave(el, "scale", 93.6, S1, Math.PI / 12, SIZE, (j, t) => SIZE * (1 + (j % 2 ? 0.06 : -0.06) * accident(t)));
+          });
+
+          // ---------- the score: bits fly out of the columns into a fraction ----------
+          const TX = 1080, TY = 962, score = q("#similarity-score");
+          const piece = (x, y, cls, html) => { const el = div(score, cls, html); put(el, x, y, { scale: 0, opacity: 0 }); return el; };
+          const frac = [piece(TX - 290, TY, "p big", "T(A, B) ="), piece(TX, TY, "p", `<div class="bar"></div>`), piece(TX, TY - 50, "anchor"), piece(TX, TY + 52, "anchor")];
+          gsap.set(frac.slice(2), { xPercent: 0, yPercent: 0 });
+          frac.forEach((el) => pop(el, 88.7));
+          // one side of the fraction: a dot leaves each column, and the number counts them as they land
+          const tally = (anchor, bits, start, gap, dy, color, placeholder) => {
+            const states = [placeholder, ...bits.map((_, k) => k + 1)].map((txt, n) => { const el = div(anchor, "p count", txt); put(el, 0, 0, { opacity: n ? 0 : 1, color }); return el; });
+            bits.forEach((b, k) => {
+              const s = start + k * gap, land = s + 0.55;
+              const dot = div(score, "p", `<div class="dot" style="background:${color};box-shadow:0 0 18px ${color}"></div>`), arc = dot.firstChild;
+              put(dot, colX(b), MID, { opacity: 0 });
+              tl.set(dot, { opacity: 1 }, at(s)); tl.set(dot, { opacity: 0 }, at(land));
+              to(dot, s, land, { x: TX, y: TY + dy, scale: 0.6 }, "power2.inOut");
+              to(arc, s, s + 0.275, { y: -120 }, "sine.out"); to(arc, s + 0.275, land, { y: 0 }, "sine.in");
+              tl.set(states[k], { opacity: 0 }, at(land)); tl.set(states[k + 1], { opacity: 1 }, at(land));
+              from(states[k + 1], land, land + 0.25, { scale: 1.25 }, { scale: 1 });
+            });
+          };
+          tally(frac[2], INTER, 89.2, 0.13, -52, GREEN, "|A ∩ B|");
+          tally(frac[3], UNION, 90.5, 0.09, 52, BLUE, "|A ∪ B|");
+          pop(piece(TX + 270, TY, "p big", `<span style="font-size:64px">= <span style="color:#ffcf85">${(INTER.length / UNION.length).toFixed(2)}</span></span>`), 91.8);
+          pop(piece(1640, TY, "p note", `<div>with 2048 bits</div><div><span style="color:${GREEN}">7</span> / <span style="color:${BLUE}">17</span> = <span style="color:#ffcf85">0.41</span></div>`), 94.4);
+
+          // ---------- captions ----------
+          const caps = q("#similarity-caps"), tag = "05 · SIMILARITY";
+          caption(caps, 86.5, 88.6, { tag, title: "Now take a second molecule", sub: "N-ethylacetamide, CC(=O)NCC: one carbon longer." });
+          caption(caps, 88.7, 91.5, { tag, title: "Tanimoto similarity", sub: "bits on in both ÷ bits on in either" });
+          caption(caps, 91.6, 93.5, { tag, title: "Very similar — or is it?", sub: "Short vectors mean more collisions, and collisions inflate similarity." });
+          caption(caps, 93.6, S1, { tag, title: "Bits 6 and 8 match by accident", sub: "Different substructures in A and B. With 2048 bits, Tanimoto drops to 0.41." });
+
+          // the whole picture fades over the outro (the clip runs 0.6 s past S1 for this)
+          to(q("#similarity-all"), S1, S1 + 0.6, { opacity: 0 });
+
+          window.__timelines["similarity"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

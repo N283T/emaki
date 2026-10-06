@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Title card, then the molecule draws itself: N-methylacetamide.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in kit.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #intro { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+      </style>
+
+      <div data-hf-id="hf-zltr" id="intro" data-composition-id="intro" data-width="1920" data-height="1080">
+        <canvas data-hf-id="hf-je7c" id="intro-bg" class="layer" width="1920" height="1080"></canvas>
+        <div data-hf-id="hf-lhbq" id="intro-world" class="layer"></div>
+        <div data-hf-id="hf-qydp" id="intro-caps" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { BACK, chapter, fade } = emaki; // kit.js
+          const S0 = 0, S1 = 14.2; // story seconds, like every time below; the story skips from 2.3 to 10
+          const { q, tl, from, caption, molecule, rain } = chapter("intro", S0);
+
+          rain(q("#intro-bg"), S1, (t) => fade(t, 0, 2.4, 0.3, 0.4));
+          caption(q("#intro-caps"), 0.1, 2.3, { hero: true, title: "ECFP4", sub: "How a molecule becomes a bit vector" });
+
+          // bonds draw in one after another, then the atoms pop onto them
+          const mol = molecule(q("#intro-world"));
+          // the gap is longer than the bond and the start sits inside it: with the two exactly equal, rounding
+          // leaves a sliver of dash at the bond's start, and its round cap shows as a dot before anything is drawn
+          mol.bonds.forEach((b, n) => { gsap.set(b.els, { strokeDasharray: `${b.L} ${b.L + 10}` });
+            from(b.els, 10.4 + n * 0.28, 11.0 + n * 0.28, { strokeDashoffset: b.L + 5 }, { strokeDashoffset: 0 }, "power2.inOut"); });
+          mol.atoms.forEach((a, n) => from(a.g, 10.9 + n * 0.16, 11.5 + n * 0.16, { scale: 0 }, { scale: 1 }, BACK));
+          caption(q("#intro-caps"), 10.2, 14.1, { title: "N-methylacetamide", sub: "CC(=O)NC" });
+          window.__timelines["intro"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

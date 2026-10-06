@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 03, radius 2: one more round, where most new identifiers duplicate an environment already seen.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in kit.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #radius2 { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+      </style>
+
+      <div data-hf-id="hf-x6or" id="radius2" data-composition-id="radius2" data-width="1920" data-height="1080">
+        <canvas data-hf-id="hf-wqf2" id="radius2-bg" class="layer" width="1920" height="1080"></canvas>
+        <div data-hf-id="hf-kms8" id="radius2-world" class="layer"></div>
+        <div data-hf-id="hf-f8eu" id="radius2-stage" class="layer"></div>
+        <div data-hf-id="hf-dxkn" id="radius2-caps" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { chapter, backdrop } = emaki; // kit.js
+          const S0 = 51.6, S1 = 64.8; // story seconds, like every time below
+          const { q, tl, caption, tray, molecule } = chapter("radius2", S0);
+          const caps = q("#radius2-caps"), tag = "03 · RADIUS 2";
+
+          backdrop(q("#radius2-bg"));
+          const mol = molecule(q("#radius2-world"), { labels: ["e", "f", "g", "h", "i"] });
+          tray(q("#radius2-stage"), 9);
+
+          // the nitrogen's environment now spans the molecule's whole backbone: a new feature, [j]
+          caption(caps, S0, 56.1, { tag, title: "Neighbours of neighbours", sub: "Each identifier now covers a bigger substructure." });
+          mol.reach(3, 2, 54.0, 56.2); mol.next(3, "j", 55.0, S1);
+
+          // the other four cover the same bonds as an earlier environment, so they are dropped
+          caption(caps, 56.2, 64.6, { tag, title: "Seen these bonds before? Drop it.", sub: "An environment that covers the same bonds as an earlier one is a duplicate." });
+          [[0, "l", "= f", 56.2, 58.2, 57.0, 57.6], [2, "m", "= f", 58.2, 60.6, 59.0, 59.6], [1, "n", "= j", 60.6, 62.6, 61.2, 61.7], [4, "o", "= h", 62.6, 64.6, 63.2, 63.7]]
+            .forEach(([n, key, same, s0, s1, shown, stamped]) => { mol.reach(n, 2, s0, s1); mol.next(n, key, shown, s1, { grey: true, stamp: [same, stamped] }); });
+          window.__timelines["radius2"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>
