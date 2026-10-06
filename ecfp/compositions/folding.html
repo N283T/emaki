@@ -1,7 +1,7 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8">
     <!-- Chapter 04, folding: the ten identifiers drop into a 16-bit vector, two of them collide.
          Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
          shared classes in style.css (.chip, .slot, .digit, …) and the molecule data in kit.js. -->
@@ -14,19 +14,19 @@
         #folding .mod { color: #eef1f7; font-weight: 700; font-size: 17px; }
       </style>
 
-      <div id="folding" data-composition-id="folding" data-width="1920" data-height="1080">
-        <canvas id="folding-bg" class="layer" width="1920" height="1080"></canvas>
-        <svg id="folding-world" class="layer" viewBox="0 0 1920 1080">
-          <defs>
-            <filter id="folding-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="9" /></filter>
-            <radialGradient id="folding-atomfill" cx="40%" cy="35%"><stop offset="0" stop-color="#23304f" /><stop offset="1" stop-color="#121a2d" /></radialGradient>
+      <div data-hf-id="hf-wty3" id="folding" data-composition-id="folding" data-width="1920" data-height="1080">
+        <canvas data-hf-id="hf-w74p" id="folding-bg" class="layer" width="1920" height="1080"></canvas>
+        <svg data-hf-id="hf-dceg" id="folding-world" class="layer" viewBox="0 0 1920 1080">
+          <defs data-hf-id="hf-mh0t">
+            <filter data-hf-id="hf-fjnd" id="folding-glow" x="-50%" y="-50%" width="200%" height="200%"><fegaussianblur data-hf-id="hf-sfiv" stdDeviation="9" /></filter>
+            <radialgradient data-hf-id="hf-huyc" id="folding-atomfill" cx="40%" cy="35%"><stop data-hf-id="hf-1c4e" offset="0" stop-color="#23304f" /><stop data-hf-id="hf-p9ra" offset="1" stop-color="#121a2d" /></radialgradient>
           </defs>
-          <g id="folding-cam"></g>
+          <g data-hf-id="hf-p4xk" id="folding-cam" />
         </svg>
-        <svg id="folding-links" class="layer" viewBox="0 0 1920 1080"></svg>
-        <div id="folding-slots" class="layer"></div>
-        <div id="folding-cols" class="layer"></div>
-        <div id="folding-caps" class="layer"></div>
+        <svg data-hf-id="hf-h30z" id="folding-links" class="layer" viewBox="0 0 1920 1080" />
+        <div data-hf-id="hf-5a54" id="folding-slots" class="layer"></div>
+        <div data-hf-id="hf-w1ac" id="folding-cols" class="layer"></div>
+        <div data-hf-id="hf-owfa" id="folding-caps" class="layer"></div>
       </div>
 
       <script>
