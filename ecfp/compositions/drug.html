@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 06, a real drug: paracetamol's environments, its fingerprint at 2048 bits, and a collision even there.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in kit.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #drug { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #drug .wall { position: absolute; left: 0; top: 0; overflow: visible; }
+        #drug .lit { width: 9px; height: 13px; border-radius: 2px; background: #6cbcff; box-shadow: 0 0 12px 2px #6cbcff; }
+        #drug .ends { font: 500 15px "JetBrains Mono", monospace; color: #9aa5bd; white-space: nowrap; }
+        #drug .frame { width: 23px; height: 27px; border-radius: 6px; border: 3px solid #ff5d5d; box-shadow: 0 0 14px rgba(255,93,93,.6); }
+        #drug .stat { font: 600 40px Inter; color: #8b95ab; white-space: nowrap; }
+        #drug .stat b { color: #6cbcff; font: 800 96px Inter; letter-spacing: -.03em; margin-right: 14px; }
+      </style>
+
+      <div id="drug" data-composition-id="drug" data-width="1920" data-height="1080">
+        <div id="drug-all" class="layer">
+          <canvas id="drug-bg" class="layer" width="1920" height="1080"></canvas>
+          <div id="drug-wall" class="layer"></div>
+          <div id="drug-world" class="layer"></div>
+          <svg id="drug-links" class="layer" viewBox="0 0 1920 1080"></svg>
+          <div id="drug-stage" class="layer"></div>
+          <div id="drug-caps" class="layer"></div>
+        </div>
+      </div>
+
+      <script>
+        (() => {
+          const { PARACETAMOL: P, BACK, RED, fmt, chapter, backdrop } = emaki; // kit.js
+          const S0 = 103.0, S1 = 133.0; // story seconds, like every time below
+          const { q, svg, div, put, at, tl, from, to, show, caption, molecule } = chapter("drug", S0);
+          const caps = q("#drug-caps"), stage = q("#drug-stage"), tag = "06 · A REAL DRUG", SIZE = 2048;
+          // every environment ECFP4 keeps, the identifiers among them, and the bits those fold onto
+          const ids = [...new Set(P.envs.map(([, , id]) => id))], bitOf = (id) => id % SIZE, bits = [...new Set(ids.map(bitOf))].sort((a, b) => a - b);
+
+          backdrop(q("#drug-bg"));
+
+          // ---------- paracetamol; one atom looks further and further around itself ----------
+          const xs = P.atoms.map((a) => a.x), ys = P.atoms.map((a) => a.y), mid = [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2];
+          const view = (x, y, s) => ({ cx: mid[0] - (x - 960) / s, cy: mid[1] - (y - 540) / s, s }); // the molecule's middle at the screen point (x, y)
+          const WIDE = view(960, 600, 0.62), TOP = view(560, 430, 0.46);
+          const mol = molecule(q("#drug-world"), { view: WIDE, of: P });
+          gsap.set(mol.cam, { opacity: 0 }); to(mol.cam, 103.3, 104.3, { opacity: 1 }, "power2.out");
+          caption(caps, 103.4, 110.6, { tag, title: "Paracetamol", sub: `${P.atoms.length} atoms. Each one looks around itself, out to radius 2.` });
+          const RING = 4; // the ring carbon that carries the nitrogen
+          mol.reach(RING, 0, 105.0, 106.2); mol.reach(RING, 1, 106.4, 108.0); mol.reach(RING, 2, 108.2, 110.4);
+
+          // ---------- the ring's symmetry repeats identifiers ----------
+          caption(caps, 110.8, 117.6, { tag, title: `${P.envs.length} environments, ${ids.length} identifiers`, sub: "Duplicates are dropped, and the ring's four CH atoms get the same ones." });
+          const count = (id) => P.envs.filter((e) => e[2] === id).length, most = Math.max(...ids.map(count));
+          P.envs.filter(([, r, id]) => r === 0 && count(id) === most).forEach(([atom], k) => mol.reach(atom, 0, 111.4 + k * 0.3, 117.2));
+
+          // ---------- its fingerprint, at full length ----------
+          caption(caps, 117.8, 124.8, { tag, title: "Its fingerprint", sub: `${bits.length} of ${fmt(SIZE)} bits, at RDKit's default length.` });
+          mol.move(117.8, 119.0, TOP);
+          // the wall: 16 rows of 128 cells, its top left corner at (X, Y)
+          const X = 194, Y = 620, COLS = 128, cell = (bit) => [(bit % COLS) * 12 + 4.5, Math.floor(bit / COLS) * 21 + 6.5];
+          const wall = div(q("#drug-wall"), "anchor"); gsap.set(wall, { x: X, y: Y + 50, opacity: 0 });
+          const grid = svg("svg", { class: "wall", viewBox: "0 0 1533 328", width: 1533, height: 328 }, wall);
+          svg("defs", {}, grid).innerHTML = `<pattern id="drug-cells" width="12" height="21" patternUnits="userSpaceOnUse"><rect width="9" height="13" rx="2" fill="#1a2440"/></pattern>`;
+          svg("rect", { width: 1533, height: 328, fill: "url(#drug-cells)" }, grid);
+          put(div(wall, "p ends", "bit 0"), 0, -26, { xPercent: 0, yPercent: 0 }); put(div(wall, "p ends", `bit ${SIZE - 1}`), 1533, 336, { xPercent: -100, yPercent: 0 });
+          to(wall, 118.8, 119.8, { y: Y, opacity: 1 }, "power2.out");
+          const lit = {};
+          bits.forEach((b, k) => { const s = 120.2 + k * 0.1, el = (lit[b] = div(wall, "p", `<div class="lit"></div>`));
+            put(el, ...cell(b), { opacity: 0 }); tl.set(el, { opacity: 1 }, at(s)); from(el.firstChild, s, s + 0.45, { scale: 2.6 }, { scale: 1 }, "power2.out"); });
+          const stat = div(stage, "p stat", `<b>${bits.length}</b> of ${fmt(SIZE)} bits on`); put(stat, 1330, 430, { opacity: 0 }); to(stat, 121.0, 121.5, { opacity: 1 }, "power2.out");
+
+          // ---------- one bit is shared by two different atoms: a collision, even at this length ----------
+          const shared = bits.find((b) => ids.filter((id) => bitOf(id) === b).length > 1), pair = P.envs.filter(([, , id]) => bitOf(id) === shared);
+          caption(caps, 125.0, 132.8, { alert: true, title: "Collision", sub: `Even at ${fmt(SIZE)} bits: the C=O carbon and the OH oxygen share bit ${shared}.` });
+          const [bx, by] = cell(shared), frame = div(wall, "p", `<div class="frame"></div>`);
+          put(frame, bx, by, { scale: 0, opacity: 0 }); to(frame, 125.8, 126.2, { scale: 1, opacity: 1 }, BACK);
+          to(lit[shared].firstChild, 126.0, 126.3, { backgroundColor: RED, boxShadow: `0 0 12px 2px ${RED}` }, "power2.out");
+          pair.forEach(([atom, radius], k) => {
+            const s = 125.5 + k * 0.4, [ax, ay] = mol.screen(P.atoms[atom].x, P.atoms[atom].y, TOP);
+            mol.reach(atom, radius, s, 132.6, true);
+            const path = svg("path", { d: `M ${ax} ${ay + 34} C ${ax} ${ay + 150}, ${X + bx} ${Y + by - 190}, ${X + bx} ${Y + by - 18}`, fill: "none", stroke: RED, "stroke-width": 3, "stroke-linecap": "round", pathLength: 1, "stroke-dasharray": "1 1.1" }, q("#drug-links"));
+            from(path, s + 0.4, s + 1.2, { strokeDashoffset: 1.05 }, { strokeDashoffset: 0 }, "power2.inOut"); show(path, s + 0.4, 132.6, 0.9, 0.2, 0.3);
+          });
+
+          // the whole picture fades over the outro (the clip runs 0.6 s past S1 for this)
+          to(q("#drug-all"), S1, S1 + 0.6, { opacity: 0 });
+
+          window.__timelines["drug"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

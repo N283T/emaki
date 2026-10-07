@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 05, similarity: the second molecule shares no path with the first, because one atom of every path changed.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #similarity { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+      </style>
+
+      <div id="similarity" data-composition-id="similarity" data-width="1920" data-height="1080">
+        <div id="similarity-bg" class="layer bg"></div>
+        <div id="similarity-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, BLUE, AMBER, GREEN, RED, chapter } = emaki, { VIEW, chainHTML, WALL } = emaki.film; // kit.js, film.js
+          const c = chapter("similarity"), { layer, canvas, box, to, set, pop, pulse, appear, vanish, caption, HIDDEN, SMALL } = c;
+          const tag = "05 · SIMILARITY", A = D.bits.A, B = D.bits.B, both = B.filter((b) => A.includes(b)), either = [...new Set([...A, ...B])].sort((p, q) => p - q);
+          const back = layer(), ui = layer(), MID = [960, 405];
+          const wall = c.wall(back, ...WALL, { size: D.size.A, group: 4 }); A.forEach((b) => wall.on(b, BLUE));
+          const mA = c.mol(back, "A", VIEW.a), mB = c.mol(back, "B", VIEW.b, { drawn: false });
+          const who = (key, v, bits, color, more) => box(ui, `<div class="who">${key} · ${D.mols[key].name.toUpperCase()}<b style="color:${color}">${bits} bits on</b></div>`, v.at[0], 545, more);
+          who("A", VIEW.a, A.length, BLUE);
+
+          // ---------- molecule B lights its own bits ----------
+          caption(0.3, 7.4, { tag, title: "Now a second molecule", sub: `N-ethylacetamide, CC(=O)NCC: one carbon longer, ${D.torsions.B.length} paths.` });
+          mB.drawIn(0.9); appear(who("B", VIEW.b, B.length, AMBER, HIDDEN), 1.6);
+          const key = box(ui, `<div class="key"><span><i style="background:${BLUE}"></i>only in A</span><span><i style="background:${AMBER}"></i>only in B</span><span><i style="background:${GREEN}"></i>in both</span></div>`, 960, WALL[1] - 38, HIDDEN);
+          appear(key, 3.0);
+          B.forEach((b, k) => { const t = 3.4 + k * 0.6; if (A.includes(b)) wall.tint(b, GREEN, t); else wall.on(b, AMBER, t); });
+
+          // ---------- Tanimoto: nothing is shared ----------
+          caption(7.6, 14.0, { tag, title: "Not one bit in common", sub: "Tanimoto similarity: bits on in both, divided by bits on in either." });
+          const piece = (dx, dy, html, more = SMALL) => box(ui, html, MID[0] + dx, MID[1] + dy, more);
+          const frac = [piece(-215, 0, `<div class="big">T(A, B) =</div>`), piece(30, 0, `<div class="bar"></div>`), piece(30, -48, `<div class="count" style="color:${GREEN}">${both.length}</div>`)];
+          frac.forEach((el) => pop(el, 8.0));
+          // a dot leaves each bit that is on, and the number under the bar counts them as they land
+          const states = ["", ...either.map((_, k) => k + 1)].map((txt) => piece(30, 48, `<div class="count">${txt}</div>`, HIDDEN));
+          either.forEach((b, k) => {
+            const t = 8.9 + k * 0.3, land = t + 0.6, dot = box(ui, `<div class="dot" style="background:#eef1f7;box-shadow:0 0 18px #eef1f7"></div>`, ...wall.at(b), HIDDEN);
+            set(dot, t, { autoAlpha: 1 }); c.fly(dot, t, land, { x: MID[0] + 30, y: MID[1] + 48, scale: 0.6 }, { arc: 90 }); set(dot, land, { autoAlpha: 0 });
+            set(states[k], land, { autoAlpha: 0 }); set(states[k + 1], land, { autoAlpha: 1 }); pulse(states[k + 1].firstChild, land, 1.25);
+          });
+          const value = piece(255, 0, `<div class="big">= <span style="color:#ffcf85">${(both.length / either.length).toFixed(2)}</span></div>`); pop(value, 11.3);
+
+          // ---------- why: the same paths, with one number changed ----------
+          caption(14.2, 25.0, { tag, title: "One number changed", sub: "The new carbon hangs off the end of both paths: that atom's count goes from 0 to 1." });
+          to([wall.el, key], 14.2, 14.8, { autoAlpha: 0.1 });
+          const atoms = (t) => t.atoms.map((a) => a.atom).join(), X = [500, 1420];
+          D.torsions.A.forEach((a, n) => {
+            const b = D.torsions.B.find((t) => atoms(t) === atoms(a)), hot = a.atoms.findIndex((x, k) => x.code !== b.atoms[k].code), t = 15.2 + n * 1.6;
+            [[a, "A", 700, BLUE, -1], [b, "B", 800, AMBER, hot]].forEach(([tor, name, y, color, mark], k) => {
+              pop(box(ui, chainHTML(tor, mark), X[n], y, SMALL), t + k * 0.5, 0.95);
+              appear(box(ui, `<div class="lbl" style="color:${color}">${name}</div>`, X[n] - 375, y, HIDDEN), t + k * 0.5);
+            });
+          });
+          const last = 4, extra = 5; // the atom both paths end on, and the carbon that B adds to it
+          mA.ring(last, 18.6, 24.6); mB.ring(last, 18.9, 24.6); mB.light([mB.G.bond(last, extra)], 19.6, 24.6, RED, false); mB.mark(extra, 19.6, 24.6, RED);
+          // B's third path has no counterpart in A at all
+          const fresh = D.torsions.B.find((t) => !D.torsions.A.some((a) => atoms(a) === atoms(t)));
+          pop(box(ui, chainHTML(fresh), 960, 940, SMALL), 21.0, 0.95); appear(box(ui, `<div class="lbl" style="color:${AMBER}">B only</div>`, 960 - 410, 940, HIDDEN), 21.0);
+          mB.trace(fresh.atoms.map((a) => a.atom), 21.2, 24.6, { color: AMBER, numbers: null, step: 0.3 });
+
+          // ---------- the same two molecules under the other fingerprints of the series ----------
+          caption(25.2, 32.8, { tag, title: "Same molecules, four fingerprints", sub: "All at 2048 bits. With so few paths, one changed atom touches them all." });
+          [...ui.querySelectorAll(".chain, .lbl")].forEach((el) => vanish(el.parentNode.parentNode, 25.4));
+          [...frac, ...states, value].forEach((el) => vanish(el, 25.4));
+          c.board(ui, 880, 668, "torsion").forEach((row, n) => row.in(25.9 + n * 0.3));
+          c.fadeOut();
+          window.__timelines["similarity"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

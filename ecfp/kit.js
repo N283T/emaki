@@ -6,7 +6,7 @@
 // own in Studio gets it. Everything hangs off one global, `emaki`.
 // ============================================================================
 window.emaki = window.emaki || (() => {
-  const STORY_END = 99.4;
+  const STORY_END = 136.4;
   // The storyboard is written in story seconds; PLAN says how fast each stretch of it plays
   // (story seconds per second of film). To change the pacing, edit the rates here and run
   // `node sync-clips.mjs`, which moves the clips in index.html to match. The story skips 2.3 → 10.
@@ -23,12 +23,14 @@ window.emaki = window.emaki || (() => {
     { s0: 76.0, s1: 79.0, rate: 4.0 },   // skip: the chips have landed, nothing moves
     { s0: 79.0, s1: 86.4, rate: 0.95 },  // collision, bit vector
     { s0: 86.4, s1: 96.0, rate: 0.9 },   // Tanimoto
-    { s0: 96.0, s1: STORY_END, rate: 1.0 },
+    { s0: 96.0, s1: 103.0, rate: 1.0 },  // the four fingerprints of the series
+    { s0: 103.0, s1: 133.0, rate: 1.0 }, // paracetamol
+    { s0: 133.0, s1: STORY_END, rate: 1.0 },
   ];
-  // the chapters, as [composition id, first story second, last]. The similarity chapter runs
-  // 0.6 s past the start of the outro, over which it fades out.
+  // the chapters, as [composition id, first story second, last]. The similarity and the drug chapter
+  // each run 0.6 s past the start of the next one, over which they fade out.
   const CHAPTERS = [["intro", 0, 14.2], ["radius0", 14.2, 30.9], ["radius1", 30.9, 51.6], ["radius2", 51.6, 64.8], ["unfolded", 64.8, 71.2],
-    ["folding", 71.2, 86.4], ["similarity", 86.4, 96.6], ["outro", 96.0, STORY_END]];
+    ["folding", 71.2, 86.4], ["similarity", 86.4, 103.6], ["drug", 103.0, 133.6], ["outro", 133.0, STORY_END]];
   let _r = 0;
   const SEGS = PLAN.map((p) => { const g = { r0: _r, s0: p.s0, rate: p.rate }; _r += (p.s1 - p.s0) / p.rate; return g; });
   const T_END = _r;
@@ -44,17 +46,20 @@ window.emaki = window.emaki || (() => {
     { el: "C", text: "CH₃", x: 1260, y: 480, dir: 1 },
   ];
   const BONDS = [[0, 1, 1], [1, 2, 2], [1, 3, 1], [3, 4, 1]];
-  function dist(c) {
-    const d = ATOMS.map(() => Infinity); d[c] = 0; const q = [c];
-    while (q.length) { const u = q.shift(); for (const [i, j] of BONDS) for (const [x, y] of [[i, j], [j, i]]) if (x === u && d[y] > d[u] + 1) { d[y] = d[u] + 1; q.push(y); } }
+  // graph distances from atom c, and its environment out to radius r, in a molecule given as atoms and bonds
+  function distIn(c, atoms, bonds) {
+    const d = atoms.map(() => Infinity); d[c] = 0; const q = [c];
+    while (q.length) { const u = q.shift(); for (const [i, j] of bonds) for (const [x, y] of [[i, j], [j, i]]) if (x === u && d[y] > d[u] + 1) { d[y] = d[u] + 1; q.push(y); } }
     return d;
   }
-  function env(c, r) {
-    const d = dist(c);
-    const bonds = new Set(BONDS.map((b, n) => (Math.min(d[b[0]], d[b[1]]) < r ? n : -1)).filter((n) => n >= 0));
-    const atoms = new Set([c]); for (const n of bonds) { atoms.add(BONDS[n][0]); atoms.add(BONDS[n][1]); }
+  function envIn(c, r, all, links) {
+    const d = distIn(c, all, links);
+    const bonds = new Set(links.map((b, n) => (Math.min(d[b[0]], d[b[1]]) < r ? n : -1)).filter((n) => n >= 0));
+    const atoms = new Set([c]); for (const n of bonds) { atoms.add(links[n][0]); atoms.add(links[n][1]); }
     return { atoms, bonds };
   }
+  // the same in the film's own molecule
+  const dist = (c) => distIn(c, ATOMS, BONDS), env = (c, r) => envIn(c, r, ATOMS, BONDS);
 
   // ---------- identifiers ----------
   const COL = { a: "#8b5cf6", b: "#3b82f6", c: "#f97316", d: "#10b981", e: "#ec4899", f: "#6366f1",
@@ -123,6 +128,30 @@ window.emaki = window.emaki || (() => {
     for (const a of atoms) o += `<circle cx="${a.x}" cy="${a.y}" r="50" fill="#121a2d" stroke="#3a4a74" stroke-width="5"/><text x="${a.x}" y="${a.y + 2}" text-anchor="middle" dominant-baseline="central" font-family="Inter" font-weight="800" font-size="${a.text.length > 1 ? 38 : 46}" fill="${a.el === "O" ? "#ff7b7b" : a.el === "N" ? "#6cbcff" : "#eef1f7"}">${a.text}</text>`;
     return o + "</svg>";
   }
+
+  // ---------- a real drug, and the series ----------
+  // paracetamol, CC(=O)Nc1ccc(O)cc1: its atoms in RDKit's 2D coordinates, and every environment that ECFP4 keeps
+  // as [atom, radius, identifier] (rdFingerprintGenerator, RDKit 2026.03)
+  const PARACETAMOL = {
+    atoms: [
+      { el: "C", text: "CH₃", x: 302.1, y: 583.2, dir: 1 },
+      { el: "C", text: "C", x: 527.3, y: 522.9, dir: 1 },
+      { el: "O", text: "O", x: 587.7, y: 297.6, dir: 1 },
+      { el: "N", text: "NH", x: 692.3, y: 687.8, dir: 1 },
+      { el: "C", text: "C", x: 917.6, y: 627.4, dir: 1 },
+      { el: "C", text: "CH", x: 977.9, y: 402.1, dir: 1 },
+      { el: "C", text: "CH", x: 1203.2, y: 341.8, dir: 1 },
+      { el: "C", text: "C", x: 1368.2, y: 506.7, dir: 1 },
+      { el: "O", text: "OH", x: 1593.4, y: 446.3, dir: 1 },
+      { el: "C", text: "CH", x: 1307.8, y: 732.0, dir: 1 },
+      { el: "C", text: "CH", x: 1082.5, y: 792.3, dir: 1 },
+    ],
+    bonds: [[0, 1, 1], [1, 2, 2], [1, 3, 1], [3, 4, 1], [4, 5, 1], [5, 6, 2], [6, 7, 1], [7, 8, 1], [7, 9, 2], [9, 10, 1], [10, 4, 2]],
+    envs: [[0, 0, 2246728737], [1, 0, 2246699815], [2, 0, 864942730], [3, 0, 847961216], [4, 0, 3217380708], [5, 0, 3218693969], [6, 0, 3218693969], [7, 0, 3217380708], [8, 0, 864662311], [9, 0, 3218693969], [10, 0, 3218693969], [0, 1, 3545365497], [1, 1, 411967733], [2, 1, 1510328189], [3, 1, 1790668568], [4, 1, 3918336191], [5, 1, 951226070], [6, 1, 951226070], [7, 1, 2905660137], [8, 1, 26234434], [9, 1, 951226070], [10, 1, 951226070], [1, 2, 43357009], [3, 2, 2734098962], [4, 2, 353395765], [5, 2, 2560252747], [6, 2, 2629723425], [7, 2, 859799282], [9, 2, 2629723425], [10, 2, 2560252747]],
+  };
+  // the same two molecules, A and B, under the four fingerprints of the series, all at 2048 bits:
+  // [bits on in both, bits on in either]
+  const BOARD = { "ECFP4": [7, 17], "Atom Pair": [6, 19], "Topological Torsion": [0, 5], "RDKit": [22, 28] };
 
   // ---------- shared numbers ----------
   // camera views: the world point at the centre of the frame, and the zoom
@@ -212,8 +241,10 @@ window.emaki = window.emaki || (() => {
     };
 
     // ----- the molecule on a camera -----
-    // `labels` are the identifiers already under the atoms; `view` is where the camera starts.
-    const molecule = (layer, { labels = [], view = VIEW.wide } = {}) => {
+    // `labels` are the identifiers already under the atoms; `view` is where the camera starts; `of` is the
+    // molecule to draw, when it is not the film's own.
+    const molecule = (layer, { labels = [], view = VIEW.wide, of = { atoms: ATOMS, bonds: BONDS } } = {}) => {
+      const { atoms: ATOMS, bonds: BONDS } = of, dist = (c) => distIn(c, ATOMS, BONDS), env = (c, r) => envIn(c, r, ATOMS, BONDS);
       const cam = div(layer, "anchor");
       const s = svg("svg", { class: "world", viewBox: "0 0 1920 1080", width: 1920, height: 1080 }, cam);
       svg("defs", {}, s).innerHTML = `<filter id="${id}-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="9"/></filter>
@@ -362,5 +393,5 @@ window.emaki = window.emaki || (() => {
   }
 
   return { STORY_END, PLAN, CHAPTERS, T_END, story, real, ATOMS, BONDS, dist, env, COL, IDS, ID, BIT, fmt, KEYS, ENVK, BITSTR, chipHTML, shade, miniSVG,
-    BVEC, ACCIDENT, INTER, ONLY, UNION, ATOMS_B, BONDS_B, molSVG, VIEW, BACK, AMBER, RED, rnd, fade, chapter, backdrop, world };
+    BVEC, ACCIDENT, INTER, ONLY, UNION, ATOMS_B, BONDS_B, molSVG, PARACETAMOL, BOARD, VIEW, BACK, AMBER, RED, rnd, fade, chapter, backdrop, world };
 })();

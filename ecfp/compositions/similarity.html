@@ -21,6 +21,14 @@
         #similarity .count { font: 800 52px "JetBrains Mono", monospace; white-space: nowrap; }
         #similarity .bar { width: 250px; height: 5px; border-radius: 3px; background: #eef1f7; }
         #similarity .note { font: 700 34px/1.35 Inter; white-space: nowrap; color: #8b95ab; text-align: center; }
+        #similarity .rank { display: flex; align-items: center; gap: 26px; width: 980px; height: 64px; font: 600 32px Inter; color: #8b95ab; white-space: nowrap; }
+        #similarity .rank .name { width: 330px; text-align: right; }
+        #similarity .rank .track { flex: 1; height: 16px; border-radius: 8px; background: #151d33; overflow: hidden; }
+        #similarity .rank .track i { display: block; height: 100%; border-radius: 8px; background: #46557c; }
+        #similarity .rank .val { width: 110px; font: 700 36px "JetBrains Mono", monospace; }
+        #similarity .rank.me { color: #eef1f7; }
+        #similarity .rank.me .track i { background: #4dabf7; }
+        #similarity .rank.me .val { color: #4dabf7; }
       </style>
 
       <div data-hf-id="hf-ud59" id="similarity" data-composition-id="similarity" data-width="1920" data-height="1080">
@@ -36,14 +44,15 @@
           <div data-hf-id="hf-f06c" id="similarity-match" class="layer"></div>
           <div data-hf-id="hf-3lah" id="similarity-b" class="layer"></div>
           <div data-hf-id="hf-n0hh" id="similarity-score" class="layer"></div>
+          <div id="similarity-board" class="layer"></div>
           <div data-hf-id="hf-4fii" id="similarity-caps" class="layer"></div>
         </div>
       </div>
 
       <script>
         (() => {
-          const { ATOMS, BONDS, ATOMS_B, BONDS_B, BITSTR, BVEC, ACCIDENT, INTER, ONLY, UNION, molSVG, chapter, backdrop, world } = emaki; // kit.js
-          const S0 = 86.4, S1 = 96.0; // story seconds, like every time below
+          const { ATOMS, BONDS, ATOMS_B, BONDS_B, BITSTR, BVEC, ACCIDENT, INTER, ONLY, UNION, BOARD, molSVG, chapter, backdrop, world } = emaki; // kit.js
+          const S0 = 86.4, HELD = 96.0, S1 = 103.0; // story seconds, like every time below: the comparison is held until HELD
           const { q, svg, div, put, at, tl, from, to, wave, caption } = chapter("similarity", S0);
           const BACK = "back.out(1.9)", RED = "#ff5d5d", GREEN = "#34d399", BLUE = "#6cbcff";
           const pop = (el, s, o = 1, size = 1) => { to(el, s, s + 0.5, { scale: size }, BACK); to(el, s, s + 0.2, { opacity: o }); };
@@ -95,7 +104,7 @@
 
           // ---------- which bits count ----------
           // on in both: green, solid. On in only one: blue, dashed. They appear in that order.
-          const accident = (s) => Math.min(1, (s - 93.6) / 0.3, (S1 - s) / 0.3);
+          const accident = (s) => Math.min(1, (s - 93.6) / 0.3, (HELD - s) / 0.3);
           [...INTER.map((b, k) => [b, 88.9 + k * 0.13, true]), ...ONLY.map((b, k) => [b, 90.3 + k * 0.13, false])].forEach(([b, s, both]) => {
             const el = div(q("#similarity-match"), "p", `<div class="match${both ? "" : " one"}"></div>`), box = el.firstChild;
             put(el, colX(b), MID, { scale: 0, opacity: 0 });
@@ -103,8 +112,8 @@
             if (!ACCIDENT.includes(b)) return;
             // these two match by accident: different substructures in A and B folded onto one bit
             to(box, 93.6, 93.9, { borderColor: RED, backgroundColor: "rgba(52,211,153,.18)", boxShadow: "0 0 36px rgba(255,93,93,.6)" }, "power2.out");
-            to(box, S1 - 0.3, S1, { borderColor: GREEN, backgroundColor: "rgba(52,211,153,.1)", boxShadow: "0 0 24px rgba(52,211,153,.25)" }, "power2.out");
-            wave(el, "scale", 93.6, S1, Math.PI / 12, SIZE, (j, t) => SIZE * (1 + (j % 2 ? 0.06 : -0.06) * accident(t)));
+            to(box, HELD - 0.3, HELD, { borderColor: GREEN, backgroundColor: "rgba(52,211,153,.1)", boxShadow: "0 0 24px rgba(52,211,153,.25)" }, "power2.out");
+            wave(el, "scale", 93.6, HELD, Math.PI / 12, SIZE, (j, t) => SIZE * (1 + (j % 2 ? 0.06 : -0.06) * accident(t)));
           });
 
           // ---------- the score: bits fly out of the columns into a fraction ----------
@@ -137,9 +146,19 @@
           caption(caps, 86.5, 88.6, { tag, title: "Now take a second molecule", sub: "N-ethylacetamide, CC(=O)NCC: one carbon longer." });
           caption(caps, 88.7, 91.5, { tag, title: "Tanimoto similarity", sub: "bits on in both ÷ bits on in either" });
           caption(caps, 91.6, 93.5, { tag, title: "Very similar — or is it?", sub: "Short vectors mean more collisions, and collisions inflate similarity." });
-          caption(caps, 93.6, S1, { tag, title: "Bits 6 and 8 match by accident", sub: "Different substructures in A and B. With 2048 bits, Tanimoto drops to 0.41." });
+          caption(caps, 93.6, HELD, { tag, title: "Bits 6 and 8 match by accident", sub: "Different substructures in A and B. With 2048 bits, Tanimoto drops to 0.41." });
 
-          // the whole picture fades over the outro (the clip runs 0.6 s past S1 for this)
+          // ---------- the same two molecules under the other fingerprints of the series ----------
+          caption(caps, 96.2, 102.8, { tag, title: "Same molecules, four fingerprints", sub: "All at 2048 bits. Each one measures a different kind of likeness." });
+          to(["a", "match", "b", "score"].map((layer) => q(`#similarity-${layer}`)), HELD, HELD + 0.6, { opacity: 0.07 }, "power2.out");
+          Object.entries(BOARD).forEach(([name, [both, either]], n) => {
+            const value = both / either, s = 96.8 + n * 0.3;
+            const row = div(q("#similarity-board"), "p", `<div class="rank${name === "ECFP4" ? " me" : ""}"><span class="name">${name}</span><span class="track"><i></i></span><span class="val">${value.toFixed(2)}</span></div>`);
+            put(row, 880, 520 + n * 80, { opacity: 0 }); to(row, s, s + 0.4, { opacity: 1 }, "power2.out");
+            from(row.querySelector("i"), s + 0.1, s + 0.9, { width: "0%" }, { width: `${Math.max(value, 0.006) * 100}%` }, "power2.inOut");
+          });
+
+          // the whole picture fades over the next chapter (the clip runs 0.6 s past S1 for this)
           to(q("#similarity-all"), S1, S1 + 0.6, { opacity: 0 });
 
           window.__timelines["similarity"] = tl;

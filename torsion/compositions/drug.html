@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 06, a real drug: paracetamol has fourteen paths, its ring repeats them, and they stay short where atom pairs reach far.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #drug { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #drug .stat { font: 600 40px Inter; color: #8b95ab; }
+        #drug .stat b { color: #6cbcff; font: 800 96px Inter; letter-spacing: -.03em; margin-right: 14px; }
+      </style>
+
+      <div id="drug" data-composition-id="drug" data-width="1920" data-height="1080">
+        <div id="drug-bg" class="layer bg"></div>
+        <div id="drug-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, BLUE, RED, fmt, chapter } = emaki, { VIEW, chainHTML, WALL, FULL } = emaki.film; // kit.js, film.js
+          const c = chapter("drug"), { svg, layer, canvas, box, to, set, pop, pulse, appear, vanish, show, caption, HIDDEN, SMALL } = c;
+          const tag = "06 · A REAL DRUG", T = D.torsions.P, V = VIEW.drug;
+          const world = layer(), art = canvas(), ui = layer(), m = c.mol(world, "P", V, { drawn: false });
+          const bonds = (t) => t.atoms.slice(1).map((a, k) => m.G.bond(t.atoms[k].atom, a.atom));
+
+          // ---------- paracetamol, and every path of four atoms in it ----------
+          caption(0.3, 10.6, { tag, title: "Paracetamol", sub: `${D.mols.P.atoms.length} atoms, ${T.length} paths of four.` });
+          m.drawIn(0.5);
+          const counter = box(ui, `<div class="big">path <span style="color:var(--accent)"></span></div>`, 960, 900, HIDDEN), n = counter.querySelector("span");
+          T.forEach((t, k) => { const s = 3.3 + k * 0.48; m.light(bonds(t), s, s + 0.8); set(n, s, { textContent: `${k + 1} / ${T.length}` }); });
+          show(counter, 3.2, 10.6);
+
+          // ---------- one path occurs four times, and the count bits follow ----------
+          const most = Math.max(...T.map((t) => t.count)), same = T.filter((t) => t.count === most), distinct = new Set(T.map((t) => t.id)).size;
+          caption(10.8, 18.2, { tag, title: "The ring repeats paths", sub: `${T.length} paths, but only ${distinct} different ones. The count bits keep track.` });
+          const token = box(ui, chainHTML(same[0]), 560, 905, SMALL); pop(token, 11.3);
+          const lens = c.lens(ui, 1330, 895, same[0].block); pop(lens.el, 11.5);
+          const times = box(ui, `<div class="big" style="color:${BLUE}">×<span></span></div>`, 1030, 905, HIDDEN), x = times.querySelector("span");
+          same.forEach((t, k) => {
+            const s = 12.2 + k * 1.1;
+            m.light(bonds(t), s, s + 1.0);
+            set(x, s + 0.3, { textContent: k + 1 }); if (!k) set(times, s + 0.3, { autoAlpha: 1 }); pulse(times.firstChild, s + 0.3, 1.25);
+            const bit = [1, 2, 4, 8].indexOf(k + 1); if (bit >= 0) { lens.on(bit, BLUE, s + 0.4); pulse(lens.cells[bit], s + 0.4, 1.15); }
+          });
+          [token, lens.el, times].forEach((el) => vanish(el, 18.2));
+
+          // ---------- torsions are local; atom pairs, from the film before, are not ----------
+          caption(18.4, 23.8, { tag, title: "Short range by design", sub: "A torsion spans three bonds; an atom pair can span the molecule. The two are often used together." });
+          const TEAL = "#2dd4bf", [x1, y1] = m.at(0), [x2, y2] = m.at(8);
+          m.light(bonds(T[0]), 18.9, 23.6);
+          const far = svg("path", { d: `M ${x1} ${y1 - 34} Q ${(x1 + x2) / 2} ${y1 - 330} ${x2} ${y2 - 34}`, fill: "none", stroke: TEAL, "stroke-width": 4, "stroke-linecap": "round", "stroke-dasharray": "2 14", pathLength: 1, opacity: 0 }, art);
+          gsap.set(far, { strokeDasharray: "1 1.1", strokeDashoffset: 1.05 }); set(far, 19.8, { autoAlpha: 1 }); to(far, 19.8, 20.8, { strokeDashoffset: 0 }, "power2.inOut");
+          const names = [box(ui, `<div class="note" style="color:var(--accent)">torsion: 4 atoms in a row</div>`, m.at(1)[0] - 20, m.at(0)[1] + 150, HIDDEN), box(ui, `<div class="note" style="color:${TEAL}">atom pair: 7 bonds apart</div>`, (x1 + x2) / 2, 318, HIDDEN)];
+          appear(names[0], 19.2); appear(names[1], 20.6);
+          [far, ...names].forEach((el) => vanish(el, 24.0));
+
+          // ---------- squeezed into the short vector, two different paths collide ----------
+          const Q = D.squeezed, ids = (b) => [...new Set(T.filter((_, n) => Q.blocks[n] === b).map((t) => t.id))];
+          const crowded = [...new Set(Q.blocks)].filter((b) => ids(b).length > 1)[0], inside = T.filter((_, n) => Q.blocks[n] === crowded);
+          caption(24.2, 32.2, { tag, alert: true, title: "Collision", sub: `On ${Q.size} bits, two different paths share block ${crowded}. Their counts add up: it reads ${inside.length}.` });
+          m.move(24.2, 25.4, VIEW.drugTop);
+          const short = c.wall(world, ...WALL, { size: Q.size, group: 4 });
+          gsap.set(short.el, { autoAlpha: 0, y: WALL[1] + 50 }); to(short.el, 24.8, 25.8, { autoAlpha: 1, y: WALL[1] });
+          Q.bits.forEach((b, k) => short.on(b, BLUE, 26.0 + k * 0.08));
+          short.frame(crowded, RED, 27.4, 32.0); short.thresholds(crowded, 27.7, 32.0);
+          Q.bits.filter((b) => Math.floor(b / 4) === crowded).forEach((b, k) => short.tint(b, RED, 27.8 + k * 0.3));
+          ids(crowded).forEach((id, k) => { const t = T.find((x) => x.id === id), y = 360 + k * 84, s = 28.0 + k * 0.7;
+            const el = box(ui, chainHTML(t), 1300, y, SMALL); pop(el, s, 0.78); vanish(el, 32.2);
+            const n = box(ui, `<div class="big" style="color:${RED}">×${t.count}</div>`, 1660, y, HIDDEN); appear(n, s + 0.2); vanish(n, 32.2);
+            T.filter((x) => x.id === id).forEach((x) => m.light(bonds(x), s, 31.8, RED)); });
+          vanish(short.el, 32.6);
+
+          // ---------- and its fingerprint, at full length ----------
+          const apart = new Set(T.map((t) => t.block)).size === distinct;
+          caption(32.4, 40.2, { tag, title: "Its fingerprint", sub: `${D.bits.P.length} of ${fmt(D.size.P)} bits, at RDKit's default length.${apart ? " Every path has a block of its own again." : ""}` });
+          const wall = c.wall(world, ...FULL, { size: D.size.P, group: 4 });
+          gsap.set(wall.el, { autoAlpha: 0 }); to(wall.el, 32.8, 33.6, { autoAlpha: 1 });
+          D.bits.P.forEach((b, k) => wall.on(b, BLUE, 34.0 + k * 0.12));
+          const stat = box(ui, `<div class="stat"><b>${D.bits.P.length}</b> of ${fmt(D.size.P)} bits on</div>`, 1330, 425, HIDDEN); appear(stat, 34.6);
+
+          c.fadeIn(); c.fadeOut();
+          window.__timelines["drug"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

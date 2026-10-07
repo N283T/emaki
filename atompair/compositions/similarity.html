@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 05, similarity: a second molecule lights its own bits on the wall; collisions inflate what the two share.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #similarity { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+      </style>
+
+      <div id="similarity" data-composition-id="similarity" data-width="1920" data-height="1080">
+        <div id="similarity-bg" class="layer bg"></div>
+        <div id="similarity-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, BLUE, AMBER, GREEN, RED, codeHTML, chapter } = emaki, { VIEW, WALL } = emaki.film; // kit.js, film.js
+          const c = chapter("similarity"), { layer, box, to, set, pop, pulse, appear, vanish, caption, HIDDEN, SMALL } = c;
+          const tag = "05 · SIMILARITY", SIZE = D.size.A, A = D.bits.A, B = D.bits.B, both = B.filter((b) => A.includes(b)), either = [...new Set([...A, ...B])].sort((p, q) => p - q);
+          const real = D.board.atompair, ratio = (r) => (r.both / r.either).toFixed(2);
+          const back = layer(), ui = layer(), MID = [960, 405];
+          const wall = c.wall(back, ...WALL, { size: SIZE, group: 4 }); A.forEach((b) => wall.on(b, BLUE));
+          const mA = c.mol(back, "A", VIEW.a), mB = c.mol(back, "B", VIEW.b, { drawn: false });
+          const who = (key, v, bits, color, more) => box(ui, `<div class="who">${key} · ${D.mols[key].name.toUpperCase()}<b style="color:${color}">${bits} bits on</b></div>`, v.at[0], 545, more);
+          who("A", VIEW.a, A.length, BLUE);
+
+          // ---------- molecule B lights its own bits ----------
+          caption(0.3, 7.4, { tag, title: "Now a second molecule", sub: `N-ethylacetamide, CC(=O)NCC: one carbon longer, ${D.pairs.B.length} pairs.` });
+          mB.drawIn(0.9); appear(who("B", VIEW.b, B.length, AMBER, HIDDEN), 1.6);
+          const key = box(ui, `<div class="key"><span><i style="background:${BLUE}"></i>only in A</span><span><i style="background:${AMBER}"></i>only in B</span><span><i style="background:${GREEN}"></i>in both</span></div>`, 960, WALL[1] - 38, HIDDEN);
+          appear(key, 3.0);
+          B.forEach((b, k) => { const t = 3.2 + k * 0.22; if (A.includes(b)) wall.tint(b, GREEN, t); else wall.on(b, AMBER, t); });
+
+          // ---------- Tanimoto: the bits fly out of the wall into a fraction ----------
+          caption(7.6, 15.2, { tag, title: "Tanimoto similarity", sub: "Bits on in both, divided by bits on in either." });
+          const piece = (dx, dy, html, more = SMALL) => box(ui, html, MID[0] + dx, MID[1] + dy, more);
+          const frac = [piece(-215, 0, `<div class="big">T(A, B) =</div>`), piece(30, 0, `<div class="bar"></div>`)];
+          frac.forEach((el) => pop(el, 8.0));
+          // one side of the fraction: a dot leaves each bit, and the number counts them as they land
+          const tally = (dy, bits, start, gap, color) => {
+            const states = ["", ...bits.map((_, k) => k + 1)].map((txt) => piece(30, dy, `<div class="count" style="color:${color}">${txt}</div>`, HIDDEN));
+            bits.forEach((b, k) => {
+              const t = start + k * gap, land = t + 0.6, dot = box(ui, `<div class="dot" style="background:${color};box-shadow:0 0 18px ${color}"></div>`, ...wall.at(b), HIDDEN);
+              set(dot, t, { autoAlpha: 1 }); c.fly(dot, t, land, { x: MID[0] + 30, y: MID[1] + dy, scale: 0.6 }, { arc: 90 }); set(dot, land, { autoAlpha: 0 });
+              set(states[k], land, { autoAlpha: 0 }); set(states[k + 1], land, { autoAlpha: 1 }); pulse(states[k + 1].firstChild, land, 1.25);
+            });
+            return states;
+          };
+          const counts = [...tally(-48, both, 8.6, 0.2, GREEN), ...tally(48, either, 10.6, 0.1, "#eef1f7")];
+          const value = piece(255, 0, `<div class="big">= <span style="color:#ffcf85">${(both.length / either.length).toFixed(2)}</span></div>`); pop(value, 13.0);
+
+          // ---------- some of what they share is an accident of the short vector ----------
+          const share = D.accident.length === 1 ? "One of the shared bits comes" : `${D.accident.length} of the shared bits come`;
+          caption(15.4, 23.4, { tag, alert: true, title: "Collisions inflate it", sub: `${share} from different pairs in A and B. At 2048 bits nothing collides.` });
+          D.accident.forEach((b, k) => { wall.frame(Math.floor(b / 4), RED, 15.9 + k * 0.5, 23.2); wall.flash(b, 16.2 + k * 0.5); });
+          const truth = piece(30, 126, `<div class="note" style="font-size:32px">at 2048 bits <span style="color:${GREEN}">${real.both}</span> / ${real.either} = <span style="color:#ffcf85">${ratio(real)}</span></div>`, HIDDEN); appear(truth, 18.6);
+
+          // ---------- why so little is shared: one atom changed its code, and took four pairs with it ----------
+          caption(23.6, 31.0, { tag, title: "Why so low?", sub: "CH₃ became CH₂. Its code changed, and with it every pair through that atom." });
+          const changed = 4;
+          [[mA, "A"], [mB, "B"]].forEach(([m, k], n) => { const [x, y] = m.at(changed), t = 24.1 + n * 0.4;
+            m.ring(changed, t, 30.8); const el = box(ui, codeHTML(D.codes[k][changed]), x, y - 62, SMALL); pop(el, t + 0.3, 0.72); vanish(el, 31.0); });
+          D.pairs.A.filter((p) => p.lo === changed || p.hi === changed).forEach((p, k) => { const other = p.lo === changed ? p.hi : p.lo, t = 25.6 + k * 1.15;
+            mA.trace(mA.G.path(changed, other), t, t + 1.05, { step: 0.16, numbers: null }); });
+
+          // ---------- the same two molecules under the other fingerprints of the series ----------
+          caption(31.2, 37.8, { tag, title: "Same molecules, four fingerprints", sub: "All at 2048 bits. Each one measures a different kind of likeness." });
+          to([wall.el, key], 31.2, 31.8, { autoAlpha: 0.1 }); [...frac, ...counts, value, truth].forEach((el) => vanish(el, 31.7));
+          c.board(ui, 880, 668, "atompair").forEach((row, n) => row.in(32.1 + n * 0.3));
+          c.fadeOut();
+          window.__timelines["similarity"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 04, bits: the two paths set two bits of a 2048-bit vector, each in a block of four that can hold a count.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #bits { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+      </style>
+
+      <div id="bits" data-composition-id="bits" data-width="1920" data-height="1080">
+        <div id="bits-bg" class="layer bg"></div>
+        <div id="bits-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, BLUE, fmt, chapter } = emaki, { VIEW, chainHTML, list, LIST, grid, GRID, WALL } = emaki.film; // kit.js, film.js
+          const c = chapter("bits"), { layer, canvas, box, to, appear, vanish, fly, link, caption, HIDDEN } = c;
+          const tag = "04 · BITS", T = D.torsions.A, SIZE = D.size.A, BLOCKS = SIZE / 4;
+          const back = layer(), wires = canvas(), ui = layer();
+          const tokens = T.map((t, n) => box(ui, chainHTML(t), ...list(n), { scale: LIST }));
+          const ids = T.map((t, n) => box(ui, `<div class="id">${fmt(t.id)}<b>×${t.count}</b></div>`, list(n)[0] + 490, list(n)[1], { xPercent: 0, scale: LIST, transformOrigin: "0 50%" }));
+
+          // ---------- the wall: 2048 bits in blocks of four ----------
+          caption(0.3, 5.2, { tag, title: "A fixed-length vector", sub: `RDKit's default is 2048 bits. Here, to keep every bit in view: ${SIZE}, in ${BLOCKS} blocks of four.` });
+          to(ids, 0.4, 0.8, { autoAlpha: 0 });
+          tokens.forEach((el, n) => fly(el, 0.6 + n * 0.1, 1.7 + n * 0.1, { x: grid(n)[0], y: grid(n)[1], scale: GRID }));
+          const wall = c.wall(back, ...WALL, { size: SIZE, group: 4 });
+          gsap.set(wall.el, { autoAlpha: 0, y: WALL[1] + 50 }); to(wall.el, 1.5, 2.5, { autoAlpha: 1, y: WALL[1] });
+
+          // ---------- every path turns one bit on ----------
+          caption(5.4, 11.0, { tag, title: "Every path picks a block", sub: `block = hash(path) mod ${BLOCKS}. The first bit of the block comes on.` });
+          const blocks = T.map((t, n) => {
+            const s = 6.0 + n * 1.3, [x, y] = grid(n), el = box(ui, `<div class="id">block ${t.block}</div>`, x, y + 46, HIDDEN);
+            appear(el, s); link(wires, [x, y + 68], wall.at(t.block * 4), s + 0.1, s + 2.2, BLUE, 0.35); wall.on(t.block * 4, BLUE, s + 0.55);
+            return el;
+          });
+
+          // ---------- the other three bits of a block are for counts ----------
+          caption(11.2, 15.2, { tag, title: "Four bits, to keep counts", sub: "They stand for 1, 2, 4 and 8 or more paths in the block. Here each block holds one path." });
+          wall.frame(T[0].block, "#eef1f7", 11.5, 15.0); wall.thresholds(T[0].block, 11.8, 15.0);
+
+          // ---------- what is left is the fingerprint of molecule A ----------
+          caption(15.4, 18.8, { tag, title: "Two paths, two bits", sub: `${D.bits.A.length} of ${SIZE} bits are on. That is the fingerprint.` });
+          [...tokens, ...blocks].forEach((el) => vanish(el, 15.4));
+          const m = c.mol(back, "A", VIEW.a); gsap.set(m.cam, HIDDEN); appear(m.cam, 15.8, 0.7);
+          const who = box(ui, `<div class="who">A · N-METHYLACETAMIDE<b style="color:${BLUE}">${D.bits.A.length} bits on</b></div>`, VIEW.a.at[0], 545, HIDDEN); appear(who, 16.1);
+          window.__timelines["bits"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

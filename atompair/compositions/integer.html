@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 03, one integer: a pair is packed into 23 bits, which can be read back, and every pair gets its integer.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #integer { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #integer .dec { font: 700 44px "JetBrains Mono", monospace; }
+        #integer .word { font: 700 46px "JetBrains Mono", monospace; }
+        #integer .what { font: 600 22px Inter; color: #8b95ab; }
+        #integer .sum { font: 800 76px Inter; letter-spacing: -.02em; }
+        #integer .sum span { color: var(--accent); }
+      </style>
+
+      <div id="integer" data-composition-id="integer" data-width="1920" data-height="1080">
+        <div id="integer-bg" class="layer bg"></div>
+        <div id="integer-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, fmt, bin, codeHTML, chapter } = emaki, { VIEW, pairHTML, codeBits, slot, list } = emaki.film; // kit.js, film.js
+          const c = chapter("integer"), { layer, canvas, box, to, set, pop, pulse, appear, vanish, fly, link, caption, HIDDEN, SMALL } = c;
+          const tag = "03 · ONE INTEGER", codes = D.codes.A, pairs = D.pairs.A;
+          const world = layer(), wires = canvas(), ui = layer(), m = c.mol(world, "A", VIEW.left);
+          codes.forEach((code, n) => m.tag(n, codeHTML(code)));
+          const tokens = pairs.map((p, n) => box(ui, pairHTML("A", p), ...slot(n)));
+
+          // ---------- one pair, CH3 and N two bonds apart, becomes 23 bits ----------
+          caption(0.3, 9.6, { tag, title: "Pack each pair into an integer", sub: "Nine bits per atom code, five for the distance — sorted, so A–B and B–A agree." });
+          const F = pairs.findIndex((p) => codes[p.hi].el === "N" && p.d === 2), pair = pairs[F], token = tokens[F];
+          const X = 960, TOP = 400, SIDE = 236, others = tokens.filter((_, n) => n !== F);
+          to([m.cam, ...others], 0.4, 1.0, { autoAlpha: 0 });
+          fly(token, 0.6, 1.6, { x: X, y: TOP, scale: 2 });
+          // under each part of the token: its number, then its bits
+          const parts = [{ x: X - SIDE, dec: codes[pair.lo].code, bits: codeBits(codes[pair.lo]), color: "#eef1f7", what: "smaller code", to: 1021 },
+            { x: X, dec: pair.d, bits: `<span style="color:var(--accent)">${bin(pair.d, 5)}</span>`, color: "var(--accent)", what: "distance", to: 1225 },
+            { x: X + SIDE, dec: codes[pair.hi].code, bits: codeBits(codes[pair.hi]), color: "#eef1f7", what: "larger code", to: 761 }];
+          parts.forEach((p, n) => {
+            p.decEl = box(ui, `<div class="dec" style="color:${p.color}">${p.dec}</div>`, p.x, 520, SMALL); pop(p.decEl, 2.0 + n * 0.3);
+            p.bitsEl = box(ui, `<div class="word">${p.bits}</div>`, p.x + (n - 1) * 30, 610, SMALL); pop(p.bitsEl, 3.4 + n * 0.35);
+            p.whatEl = box(ui, `<div class="what">${p.what}</div>`, p.to, 800, HIDDEN);
+          });
+          // the three groups line up as one word: larger code, smaller code, distance
+          fly(parts[2].bitsEl, 5.4, 6.4, { x: parts[2].to, y: 745 }, { arc: 70 });
+          fly(parts[0].bitsEl, 5.6, 6.5, { x: parts[0].to, y: 745 });
+          fly(parts[1].bitsEl, 5.8, 6.6, { x: parts[1].to, y: 745 });
+          parts.forEach((p, n) => appear(p.whatEl, 6.5 + n * 0.1));
+          const sum = box(ui, `<div class="sum">= <span>${fmt(pair.id)}</span></div>`, X, 900, SMALL); pop(sum, 7.1);
+
+          // ---------- and back: every group of bits is still one part of the pair ----------
+          caption(9.8, 16.4, { tag, title: "The integer is the feature", sub: `Nothing is hashed away: ${fmt(pair.id)} always reads back as this pair.` });
+          [2, 0, 1].forEach((n, k) => { const p = parts[n], t = 10.7 + k * 1.1;
+            link(wires, [p.to, 712], [p.x, 560], t, 16.2, n === 1 ? c.ACCENT : "#8b95ab");
+            pulse(p.bitsEl.firstChild, t, 1.12); pulse(p.decEl.firstChild, t + 0.45, 1.25); });
+
+          // ---------- every pair gets its integer ----------
+          caption(16.6, 23.8, { tag, title: "Ten pairs, ten integers", sub: "Each one occurs once here. Integers and counts: that is the Atom Pair fingerprint." });
+          parts.forEach((p) => [p.decEl, p.bitsEl, p.whatEl].forEach((el) => vanish(el, 16.9)));
+          const ids = pairs.map((p, n) => box(ui, `<div class="id">${fmt(p.id)}<b>×${p.count}</b></div>`, list(n)[0] + 222, list(n)[1], { xPercent: 0, autoAlpha: 0 }));
+          fly(token, 16.9, 17.9, { x: list(F)[0], y: list(F)[1], scale: 1 });
+          to(sum, 16.9, 17.9, { x: list(F)[0] + 310, y: list(F)[1], scale: 0.3, autoAlpha: 0 }, "power2.inOut"); appear(ids[F], 17.6);
+          pairs.forEach((p, n) => { if (n === F) return; const t = 18.0 + n * 0.12;
+            set(tokens[n], t, { x: list(n)[0], y: list(n)[1], scale: 0 }); pop(tokens[n], t); appear(ids[n], t + 0.3); });
+
+          window.__timelines["integer"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

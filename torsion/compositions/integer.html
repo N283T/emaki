@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 03, one integer: the four atom codes are packed into 36 bits, and every path gets its integer.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #integer { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #integer .word { font: 700 40px "JetBrains Mono", monospace; }
+        #integer .sum { font: 800 76px Inter; letter-spacing: -.02em; }
+        #integer .sum span { color: var(--accent); }
+      </style>
+
+      <div id="integer" data-composition-id="integer" data-width="1920" data-height="1080">
+        <div id="integer-bg" class="layer bg"></div>
+        <div id="integer-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, fmt, codeHTML, chapter } = emaki, { VIEW, chainHTML, codeBits, slot, list, LIST } = emaki.film; // kit.js, film.js
+          const c = chapter("integer"), { layer, box, to, set, pop, appear, vanish, fly, caption, HIDDEN, SMALL } = c;
+          const tag = "03 · ONE INTEGER", T = D.torsions.A;
+          const world = layer(), ui = layer(), m = c.mol(world, "A", VIEW.left);
+          m.M.atoms.forEach((_, n) => m.tag(n, codeHTML(T.flatMap((t) => t.atoms).find((a) => a.atom === n))));
+          const tokens = T.map((t, n) => box(ui, chainHTML(t), ...slot(n)));
+
+          // ---------- the first path becomes 36 bits ----------
+          caption(0.3, 9.4, { tag, title: "Pack the path into an integer", sub: "Nine bits per atom, 36 in all. Nothing is hashed, so it can always be read back." });
+          const X = 960, BIG = 1.5;
+          to([m.cam, tokens[1]], 0.4, 1.0, { autoAlpha: 0 });
+          fly(tokens[0], 0.6, 1.6, { x: X, y: 410, scale: BIG });
+          const groups = T[0].atoms.map((a, k) => { const el = box(ui, `<div class="word">${codeBits(a)}</div>`, X + (k - 1.5) * 187.5 * BIG, 530, SMALL); pop(el, 2.2 + k * 0.35); return el; });
+          // the four groups close up into one word
+          groups.forEach((el, k) => to(el, 4.4, 5.2, { x: X + (k - 1.5) * 236, y: 670 }, "power2.inOut"));
+          const sum = box(ui, `<div class="sum">= <span>${fmt(T[0].id)}</span></div>`, X, 820, SMALL); pop(sum, 5.6);
+
+          // ---------- every path gets its integer ----------
+          caption(9.6, 17.4, { tag, title: "Two paths, two integers", sub: "Each occurs once. Integers and counts: that is the Topological Torsion fingerprint." });
+          groups.forEach((el) => vanish(el, 9.9));
+          const ids = T.map((t, n) => box(ui, `<div class="id">${fmt(t.id)}<b>×${t.count}</b></div>`, list(n)[0] + 490, list(n)[1], { xPercent: 0, scale: LIST, transformOrigin: "0 50%", autoAlpha: 0 }));
+          fly(tokens[0], 10.0, 11.0, { x: list(0)[0], y: list(0)[1], scale: LIST });
+          to(sum, 10.0, 11.0, { x: list(0)[0] + 620, y: list(0)[1], scale: 0.36, autoAlpha: 0 }, "power2.inOut"); appear(ids[0], 10.7);
+          set(tokens[1], 11.5, { x: list(1)[0], y: list(1)[1], scale: 0 }); pop(tokens[1], 11.5, LIST); appear(ids[1], 11.9);
+          window.__timelines["integer"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

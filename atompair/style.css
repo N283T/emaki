@@ -1,0 +1,102 @@
+/* The looks the fingerprint films share (atompair, torsion and rdkitfp carry identical copies). */
+:root {
+  --bg0: #070a12; --fg: #eef1f7; --muted: #8b95ab; --line: #2b3960;
+  --amber: #ffb547; --blue: #6cbcff; --green: #34d399; --red: #ff5d5d;
+  --nbr: #fbbf24; --pi: #b79cff;  /* the two numbers of an atom code */
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 1920px; height: 1080px; background: var(--bg0); color: var(--fg); overflow: hidden;
+  font-family: Inter, system-ui, sans-serif; }
+#root { position: relative; width: 100%; height: 100%; overflow: hidden; background: var(--bg0); }
+#root > .clip { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* chapters (sub-compositions in compositions/) */
+.layer { position: absolute; inset: 0; width: 100%; height: 100%; }
+.bg { background: radial-gradient(circle at 1px 1px, rgba(120,140,190,.1) 1px, transparent 1.6px) 40px 40px / 60px 60px,
+  radial-gradient(ellipse 1200px 1000px at 50% 42%, #111b33, #05070d); }
+.p, .anchor { position: absolute; left: 0; top: 0; }  /* .p: put at (x, y) by GSAP, centred on it */
+.anchor { width: 0; height: 0; }                       /* a point that carries a group of .p boxes */
+.p { white-space: nowrap; }
+.world { position: absolute; left: 0; top: 0; overflow: visible; }  /* an svg inside its camera */
+
+/* captions */
+.cap { position: absolute; left: 120px; top: 84px; width: 1500px; }
+.cap .tag { font: 700 20px Inter; letter-spacing: .28em; color: var(--accent); margin-bottom: 14px; }
+.cap .title { font: 800 60px/1.08 Inter; letter-spacing: -.025em; }
+.cap .sub { font: 400 30px/1.35 Inter; color: var(--muted); margin-top: 14px; }
+.cap .w { display: inline-block; white-space: pre; }
+.cap.alert .title { color: var(--red); }
+.cap.hero { left: 0; width: 1920px; top: 380px; text-align: center; }
+.cap.hero .title { font-size: 168px; font-weight: 900; letter-spacing: -.045em; color: #fff; text-shadow: 0 0 70px color-mix(in srgb, var(--accent) 55%, transparent); }
+.cap.hero .title .w:last-child { color: var(--accent); }
+.cap.hero .sub { font-size: 40px; margin-top: 16px; }
+.cap em { font-style: normal; color: var(--fg); font-weight: 600; }
+.cap .n { color: var(--nbr); font-weight: 600; } .cap .pi { color: var(--pi); font-weight: 600; }
+
+/* an atom code: element | heavy neighbours | pi electrons */
+.code { display: inline-flex; align-items: stretch; height: 48px; border-radius: 13px; background: #16203a; border: 1.5px solid #32416c;
+  font: 700 27px "JetBrains Mono", monospace; overflow: hidden; box-shadow: 0 10px 24px -12px rgba(0,0,0,.9); vertical-align: middle; }
+.code b, .code i { display: flex; align-items: center; font-style: normal; }
+.code b { padding: 0 13px 0 15px; font: 800 29px Inter; }
+.code i { padding: 0 11px; border-left: 1.5px solid #32416c; }
+.code .n { color: var(--nbr); } .code .pi { color: var(--pi); }
+
+/* an atom pair: two atom codes and the number of bonds between them */
+.pair { display: inline-flex; align-items: center; }
+.dist { width: 76px; height: 4px; background: #46557c; display: flex; align-items: center; justify-content: center; }
+.dist em, .hop { font: 900 24px Inter; font-style: normal; width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: #06121a;
+  display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 4px #0b0f1a; }
+/* a path of atoms: their codes in a row */
+.chain { display: inline-flex; align-items: center; }
+.chain .link { width: 30px; height: 4px; background: #46557c; }
+.code.hot { border-color: var(--red); box-shadow: 0 0 22px rgba(255,93,93,.55); }
+.id { font: 500 21px "JetBrains Mono", monospace; color: #9aa5bd; }
+.id b { color: var(--accent); font-weight: 700; margin-left: 10px; }
+
+/* cards and numbers */
+.card { width: 440px; height: 76px; border-radius: 16px; background: linear-gradient(180deg, #17213a, #111a2e);
+  border: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; padding: 0 28px;
+  font-size: 26px; color: var(--muted); box-shadow: 0 16px 40px -18px rgba(0,0,0,.8); }
+.card b { color: var(--fg); font: 700 36px "JetBrains Mono", monospace; }
+.mono { font-family: "JetBrains Mono", monospace; }
+.num { font: 700 30px "JetBrains Mono", monospace; color: var(--fg); }
+.note { font: 500 24px Inter; color: var(--muted); }
+.lbl { font: 700 18px Inter; letter-spacing: .22em; color: var(--muted); text-transform: uppercase; }
+.big { font: 800 54px Inter; }
+
+/* the wall of bits */
+.bit { width: 9px; height: 13px; border-radius: 2px; }
+.ping { border-radius: 50%; border: 2px solid; }
+.frame { border: 3px solid; }
+.walllbl { font: 500 15px "JetBrains Mono", monospace; color: #9aa5bd; }
+.walllbl.big { font-size: 20px; }
+.lens { padding: 18px 22px 16px; border-radius: 20px; background: rgba(15,22,40,.96); border: 1.5px solid #3a4a74; box-shadow: 0 30px 60px -20px rgba(0,0,0,.9); }
+.lenshead { font: 500 19px "JetBrains Mono", monospace; color: var(--muted); margin-bottom: 14px; text-align: center; }
+.lensrow { display: flex; gap: 12px; }
+.lcell { display: flex; flex-direction: column; align-items: center; gap: 8px; font: 700 22px "JetBrains Mono", monospace; color: var(--muted); }
+.lcell b { display: block; width: 62px; height: 86px; border-radius: 10px; background: #1a2440; border: 1.5px solid #2d3a5c; }
+
+/* a fragment of the molecule as a small picture */
+.thumb { padding: 7px 8px 3px; border-radius: 14px; background: rgba(18,26,45,.9); border: 1px solid var(--line); box-shadow: 0 14px 30px -18px rgba(0,0,0,.9); }
+.thumb svg { display: block; }
+.thumb.hot { border-color: var(--amber); box-shadow: 0 0 22px rgba(255,181,71,.4); }
+.seed { font: 500 19px "JetBrains Mono", monospace; color: #9aa5bd; }
+.bondchip { font: 700 32px "JetBrains Mono", monospace; padding: 6px 16px; border-radius: 12px; background: #16203a; border: 1.5px solid #32416c; }
+.key { display: flex; gap: 34px; font: 600 20px Inter; color: var(--muted); }
+.key span { display: flex; align-items: center; gap: 10px; }
+.key i { width: 11px; height: 15px; border-radius: 2px; }
+.who { font: 700 18px Inter; letter-spacing: .2em; color: var(--muted); text-align: center; }
+.who b { display: block; margin-top: 8px; font: 500 20px "JetBrains Mono", monospace; letter-spacing: 0; }
+.dot { width: 16px; height: 16px; border-radius: 50%; }
+.count { font: 800 54px "JetBrains Mono", monospace; }
+.bar { width: 190px; height: 5px; border-radius: 3px; background: #eef1f7; }
+
+.api { font: 500 26px "JetBrains Mono", monospace; color: #7f8aa3; }
+
+/* the series scoreboard */
+.score { display: flex; align-items: center; gap: 26px; width: 980px; height: 60px; font: 600 30px Inter; color: var(--muted); }
+.score .name { width: 330px; text-align: right; }
+.score .track { flex: 1; height: 16px; border-radius: 8px; background: #151d33; overflow: hidden; }
+.score .track i { display: block; height: 100%; border-radius: 8px; background: #46557c; }
+.score .val { width: 110px; font: 700 34px "JetBrains Mono", monospace; }
+.score.me { color: var(--fg); } .score.me .track i { background: var(--accent); } .score.me .val { color: var(--accent); }

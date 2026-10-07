@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 04, bits: the ten pairs fall into the blocks of a short bit vector, where different pairs can collide.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #bits { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+      </style>
+
+      <div id="bits" data-composition-id="bits" data-width="1920" data-height="1080">
+        <div id="bits-bg" class="layer bg"></div>
+        <div id="bits-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, BLUE, RED, fmt, chapter } = emaki, { VIEW, pairHTML, list, grid, GRID, WALL, BOUNDS } = emaki.film; // kit.js, film.js
+          const c = chapter("bits"), { layer, canvas, box, to, appear, vanish, pulse, fly, link, caption, HIDDEN } = c;
+          const tag = "04 · BITS", pairs = D.pairs.A, SIZE = D.size.A, BLOCKS = SIZE / 4;
+          const back = layer(), wires = canvas(), ui = layer();
+          const tokens = pairs.map((p, n) => box(ui, pairHTML("A", p), ...list(n)));
+          const ids = pairs.map((p, n) => box(ui, `<div class="id">${fmt(p.id)}<b>×${p.count}</b></div>`, list(n)[0] + 222, list(n)[1], { xPercent: 0 }));
+          const mates = (p) => pairs.filter((q) => q.block === p.block); // the pairs that fall into the same block
+
+          // ---------- the wall: a short vector, in blocks of four ----------
+          caption(0.3, 5.6, { tag, title: "A fixed-length vector", sub: `RDKit's default is 2048 bits. Here, to keep every bit in view: ${SIZE}, in ${BLOCKS} blocks of four.` });
+          to(ids, 0.4, 0.8, { autoAlpha: 0 });
+          tokens.forEach((el, n) => fly(el, 0.6 + n * 0.03, 1.7 + n * 0.03, { x: grid(n)[0], y: grid(n)[1], scale: GRID }));
+          const wall = c.wall(back, ...WALL, { size: SIZE, group: 4 });
+          gsap.set(wall.el, { autoAlpha: 0, y: WALL[1] + 50 }); to(wall.el, 1.5, 2.5, { autoAlpha: 1, y: WALL[1] });
+
+          // ---------- every pair turns a bit of its block on ----------
+          caption(5.8, 13.6, { tag, title: "Every pair picks a block", sub: `block = hash(pair) mod ${BLOCKS}. A bit of that block comes on.` });
+          const held = {}; // the pairs that have reached each block so far
+          const blocks = pairs.map((p, n) => {
+            const t = 6.3 + n * 0.62, [x, y] = grid(n), el = box(ui, `<div class="id">block ${p.block}</div>`, x, y + 44, HIDDEN);
+            held[p.block] = (held[p.block] || 0) + 1;
+            const bit = p.block * 4 + BOUNDS.indexOf(held[p.block]); // a second pair in the block turns its second bit on
+            appear(el, t); link(wires, [x, y + 66], wall.at(bit), t + 0.1, t + 1.7, BLUE, 0.35); wall.on(bit, BLUE, t + 0.55);
+            return el;
+          });
+          const all = tokens.map((el, n) => [el, blocks[n]]), except = (keep) => all.filter((_, n) => !keep.includes(n)).flat();
+
+          // ---------- what the four bits of a block are for ----------
+          caption(13.8, 20.6, { tag, title: "Four bits, to keep counts", sub: "They stand for 1, 2, 4 and 8 or more pairs in the block. Most blocks hold one pair." });
+          const one = pairs.findIndex((p) => mates(p).length === 1);
+          to(except([one]), 14.0, 14.5, { autoAlpha: 0.2 }); to(except([one]), 20.2, 20.6, { autoAlpha: 1 });
+          wall.frame(pairs[one].block, "#eef1f7", 14.3, 20.4); wall.thresholds(pairs[one].block, 14.6, 20.4);
+          link(wires, [grid(one)[0], grid(one)[1] + 66], wall.at(pairs[one].block * 4), 14.3, 20.3, "#8b95ab", 0.35);
+
+          // ---------- two different pairs in one block ----------
+          const crowded = [...new Set(pairs.filter((p) => mates(p).length > 1).map((p) => p.block))].sort((a, b) => a - b);
+          caption(20.8, 29.2, { tag, alert: true, title: "Collision", sub: "Different pairs, same block: their counts add up, and the ≥2 bit comes on as if one pair occurred twice." });
+          const hit = pairs.map((p, n) => n).filter((n) => crowded.includes(pairs[n].block));
+          to(except(hit), 21.0, 21.5, { autoAlpha: 0.2 }); to(except(hit), 28.8, 29.2, { autoAlpha: 1 });
+          crowded.forEach((b, k) => {
+            const t = 21.5 + k * 2.4;
+            wall.frame(b, RED, t, 28.9); wall.thresholds(b, t + 0.3, 28.8);
+            [0, 1].forEach((i) => { wall.tint(b * 4 + i, RED, t + 0.7 + i * 0.3); wall.tint(b * 4 + i, BLUE, 28.5); });
+            hit.filter((n) => pairs[n].block === b).forEach((n, i) => { link(wires, [grid(n)[0], grid(n)[1] + 66], wall.at(b * 4 + i), t + 0.2, 28.7, RED, 0.35); pulse(tokens[n].firstChild, t + 0.3, 1.12); });
+          });
+
+          // ---------- what is left is the fingerprint of molecule A ----------
+          caption(29.4, 34.2, { tag, title: "Ten pairs, ten bits", sub: `${D.bits.A.length} of ${SIZE} bits are on, in ${Object.keys(held).length} blocks. That is the fingerprint.` });
+          all.flat().forEach((el) => vanish(el, 29.8));
+          const m = c.mol(back, "A", VIEW.a); gsap.set(m.cam, HIDDEN); appear(m.cam, 30.0, 0.7);
+          const who = box(ui, `<div class="who">A · N-METHYLACETAMIDE<b style="color:${BLUE}">${D.bits.A.length} bits on</b></div>`, VIEW.a.at[0], 545, HIDDEN); appear(who, 30.3);
+          window.__timelines["bits"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

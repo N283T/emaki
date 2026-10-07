@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 01, four in a row: a torsion angle needs four atoms; the fingerprint keeps the atoms and drops the angle.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #path { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #path .phi { font: italic 600 58px Georgia, serif; color: #eef1f7; }
+      </style>
+
+      <div id="path" data-composition-id="path" data-width="1920" data-height="1080">
+        <div id="path-bg" class="layer bg"></div>
+        <div id="path-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, chapter } = emaki, { VIEW, walk } = emaki.film; // kit.js, film.js
+          const c = chapter("path"), { svg, layer, canvas, box, to, set, pop, appear, vanish, show, caption, HIDDEN } = c;
+          const tag = "01 · FOUR IN A ROW", paths = D.torsions.A.map(walk), V = VIEW.wide;
+          const world = layer(), art = canvas(), ui = layer(), m = c.mol(world, "A", V);
+          const bonds = (p) => p.slice(1).map((a, k) => m.G.bond(p[k], a));
+
+          // ---------- four atoms in a row, and the twist about the bond in their middle ----------
+          caption(0.3, 8.6, { tag, title: "A torsion takes four atoms", sub: "In 3D, the twist about a bond is set by four atoms in a row." });
+          m.trace(paths[0], 1.2, 14.6, { numbers: "atoms", step: 0.7 });
+          const [x1, y1] = m.at(paths[0][1]), [x2, y2] = m.at(paths[0][2]), cx = (x1 + x2) / 2, cy = (y1 + y2) / 2, tilt = (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI;
+          const twist = svg("g", { transform: `rotate(${tilt} ${cx} ${cy})`, opacity: 0 }, art);
+          const loop = svg("ellipse", { cx, cy, rx: 30, ry: 84, fill: "none", stroke: "#eef1f7", "stroke-width": 5, "stroke-linecap": "round", "stroke-dasharray": "34 20" }, twist);
+          svg("path", { d: `M ${cx - 16} ${cy - 96} L ${cx + 14} ${cy - 84} L ${cx - 12} ${cy - 66}`, fill: "none", stroke: "#eef1f7", "stroke-width": 5, "stroke-linecap": "round", "stroke-linejoin": "round" }, twist);
+          const phi = box(ui, `<div class="phi">φ</div>`, cx + 96, cy - 104, HIDDEN);
+          show(twist, 4.4, 9.8); to(loop, 4.4, 9.8, { strokeDashoffset: -270 }, "none"); show(phi, 4.8, 9.8);
+
+          // ---------- only the path is kept ----------
+          caption(8.8, 15.0, { tag, title: "Keep the atoms, drop the angle", sub: "A topological torsion is just the path. No 3D structure is needed." });
+
+          // ---------- every path of four atoms is a feature ----------
+          caption(15.2, 21.6, { tag, title: "Every path of four atoms", sub: "N-methylacetamide has only two." });
+          m.trace(paths[1], 15.5, 18.5, { numbers: "atoms", step: 0.45 });
+          m.light(bonds(paths[0]), 18.7, 21.3);
+          window.__timelines["path"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

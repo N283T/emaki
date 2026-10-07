@@ -11,6 +11,12 @@ together with the code that renders the animation.
 | Animation | Algorithm |
 |---|---|
 | [ecfp](ecfp/) | How ECFP4 turns a molecule into a folded bit vector, and what Tanimoto similarity makes of it |
+| [atompair](atompair/) | Atom Pair: every pair of atoms and the bonds between them, packed into integers, with counts kept in the bits |
+| [torsion](torsion/) | Topological Torsion: every path of four atoms, and why one extra carbon can leave two molecules with no bit in common |
+| [rdkitfp](rdkitfp/) | The RDKit fingerprint: every fragment up to seven bonds, two bits each, and why it suits substructure search |
+
+The four fingerprint films follow the same two molecules, N-methylacetamide and N-ethylacetamide, and each
+ends on their Tanimoto similarity under its fingerprint: 0.41, 0.32, 0.00 and 0.79.
 
 Each animation is a [HyperFrames](https://github.com/heygen-com/hyperframes) project: HTML, CSS and
 JavaScript that render to video, with no build step. It needs Node.js, and ffmpeg to render.
@@ -25,14 +31,26 @@ npm run render  # an MP4 under renders/
 ## How an animation is put together
 
 - `index.html` is a list of clips, one per chapter.
-- `compositions/` holds the chapters. Each is a sub-composition whose motion is GSAP tweens, written
-  in *story seconds*: the storyboard's own clock.
-- `kit.js` is what the chapters share: the tempo, the molecule and its identifiers, and the helpers a
-  chapter is built with (the camera, an atom's environment lighting up, flying chips, captions).
+- `compositions/` holds the chapters. Each is a sub-composition whose motion is GSAP tweens.
+- `kit.js` is what the chapters share: the helpers a chapter is built with (the camera, a walk along
+  the bonds, flying boxes, captions, the wall of bits).
 - `style.css` has the shared looks.
 
-The pacing is one table, `PLAN` in `kit.js`: how fast each stretch of the storyboard plays. After changing it,
-`node sync-clips.mjs` moves the clips in `index.html` to match.
+`ecfp` also keeps its molecule, its identifiers and its pacing in `kit.js`: the `PLAN` table says how fast each
+stretch of the storyboard plays, and the chapters are written in *story seconds*, the storyboard's own clock.
+
+`atompair`, `torsion` and `rdkitfp` share one `kit.js` and one `style.css`, as identical copies so that each
+project stands on its own, and keep what differs in three more files:
+
+- `data.py` computes every number the film shows with RDKit and writes it to `data.js` (`uv run data.py`).
+  The film draws what is there and computes nothing chemical itself.
+- `film.js` has the chapter table, each chapter's length and speed, and the layout its chapters agree on.
+- Chapters are written in seconds from their own start.
+
+After changing the pacing of any of them, `node sync-clips.mjs` moves the clips in `index.html` to match.
+
+Every `npm run render` here passes `--no-experimental-fast-capture`: HyperFrames' fast capture left the wall
+of bits out of some stretches of two of the videos, which `snapshot` and `check` do not show.
 
 ## Reuse
 
