@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 02, atom codes: each atom on a path is described by three numbers, and the four codes in a row make the feature.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #codes { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+      </style>
+
+      <div id="codes" data-composition-id="codes" data-width="1920" data-height="1080">
+        <div id="codes-bg" class="layer bg"></div>
+        <div id="codes-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, INK, codeHTML, chapter } = emaki, { VIEW, chainHTML, walk, slot } = emaki.film; // kit.js, film.js
+          const c = chapter("codes"), { layer, box, to, set, pop, pulse, fly, caption, HIDDEN, SMALL } = c;
+          const tag = "02 · ATOM CODES", T = D.torsions.A, NBR = "#fbbf24", PI = "#b79cff";
+          const world = layer(), ui = layer(), m = c.mol(world, "A", VIEW.wide);
+          const bonds = (p) => p.slice(1).map((a, k) => m.G.bond(p[k], a));
+          const code = (t, atom) => t.atoms.find((a) => a.atom === atom);
+
+          // ---------- the carbonyl carbon on the first path: three numbers ----------
+          caption(0.3, 9.8, { tag, title: "Three numbers per atom", sub: "Its element, its neighbours off the path, its π electrons." });
+          const V = VIEW.carbonyl, C = 1, O = 2, me = code(T[0], C), X = 1500;
+          m.light(bonds(walk(T[0])), 0.5, 22.4);
+          m.move(0.7, 1.9, V); m.ring(C, 1.7, 9.4, "#6cbcff");
+          const card = (name, value, color, y, t) => {
+            const el = box(ui, `<div class="card">${name}<b style="color:${color}">${value}</b></div>`, ...m.at(C, V), { scale: 0.3, autoAlpha: 0 });
+            to(el, t, t + 0.6, { x: X, y, scale: 1, autoAlpha: 1 }); return el;
+          };
+          const cards = [card("Element", me.el, INK[me.el], 470, 2.3)];
+          // two of its neighbours are on the path; the oxygen is the one left over
+          const A = m.M.atoms[C], B = m.M.atoms[O], count = m.badge((A.x + B.x) / 2, (A.y + B.y) / 2, me.n, NBR);
+          m.mark(O, 3.4, 7.4, NBR); pop(count, 3.7); to(count, 7.0, 7.3, { autoAlpha: 0 });
+          cards.push(card("Neighbours off the path", me.n, NBR, 570, 4.6));
+          m.light([m.G.bond(C, O)], 5.8, 7.4, PI, false);
+          cards.push(card("π electrons", me.pi, PI, 670, 6.2));
+          // the three numbers become the atom's code, which goes to hang under the atom
+          const made = box(ui, codeHTML(me), X, 570, SMALL);
+          cards.forEach((el) => to(el, 7.6, 8.05, { y: 570, scale: 0.4, autoAlpha: 0 }, "power2.in"));
+          pop(made, 7.95, 1.6);
+          fly(made, 8.5, 9.2, { x: m.tagAt(C, V)[0], y: m.tagAt(C, V)[1], scale: m.tagSize(V) }, { arc: 90 });
+          set(made, 9.2, { autoAlpha: 0 });
+          const tags = []; tags[C] = m.tag(C, codeHTML(me), HIDDEN); set(tags[C], 9.2, { autoAlpha: 1 });
+
+          // ---------- the other atoms of the path ----------
+          caption(10.0, 17.0, { tag, title: "Only what hangs off the path", sub: "The path itself is never counted. For these three atoms, nothing else is left." });
+          m.move(10.0, 11.2, VIEW.wide);
+          walk(T[0]).filter((n) => n !== C).forEach((n, k) => { const t = 11.8 + k * 0.9; m.ring(n, t, t + 0.8, "#6cbcff"); tags[n] = m.tag(n, codeHTML(code(T[0], n)), SMALL); pop(tags[n], t + 0.2); });
+
+          // ---------- the four codes in a row are the feature ----------
+          caption(17.2, 23.6, { tag, title: "Four codes in a row", sub: "Read along the path, always from the same end, so both directions agree." });
+          const L = VIEW.left; m.move(17.2, 18.4, L);
+          // copies of the codes leave the molecule in the order of the walk and line up as one token
+          const assemble = (t, n, t0) => {
+            t.atoms.forEach((a, k) => { const el = box(ui, codeHTML(a), ...m.tagAt(a.atom, L), { scale: m.tagSize(L), autoAlpha: 0 }), s = t0 + k * 0.3;
+              set(el, s, { autoAlpha: 1 }); fly(el, s, s + 0.7, { x: slot(n)[0] + (k - 1.5) * 187.5, y: slot(n)[1], scale: 1 }, { arc: 60 }); set(el, t0 + 1.7, { autoAlpha: 0 }); });
+            const token = box(ui, chainHTML(t), ...slot(n), HIDDEN); set(token, t0 + 1.7, { autoAlpha: 1 }); pulse(token.firstChild, t0 + 1.7, 1.06);
+          };
+          assemble(T[0], 0, 18.8);
+
+          // ---------- the second path ----------
+          caption(23.8, 31.2, { tag, title: "The second path", sub: "Here the carbon's spare neighbour is the methyl, not the oxygen. Same count." });
+          m.trace(walk(T[1]), 24.2, 30.8, { numbers: "atoms", step: 0.45 });
+          tags[O] = m.tag(O, codeHTML(code(T[1], O)), SMALL); pop(tags[O], 24.6);
+          m.mark(0, 26.2, 30.6, NBR); pulse(tags[C].firstChild, 26.6, 1.2);
+          assemble(T[1], 1, 27.6);
+          window.__timelines["codes"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>
