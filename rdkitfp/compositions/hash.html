@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 03, hash: each bond of a fragment is hashed, the bond hashes are hashed again into one seed.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #hash { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #hash .what { font: 500 30px Inter; color: #8b95ab; }
+        #hash .sum { font: 800 64px Inter; letter-spacing: -.02em; color: #8b95ab; }
+        #hash .sum span { color: var(--accent); font-family: "JetBrains Mono", monospace; font-weight: 700; margin-left: 14px; }
+      </style>
+
+      <div id="hash" data-composition-id="hash" data-width="1920" data-height="1080">
+        <div id="hash-bg" class="layer bg"></div>
+        <div id="hash-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, AMBER, fmt, chapter } = emaki, { VIEW, F, sizes, thumbHTML, rowHTML, bondName, FOCUS, slot, rowLabel } = emaki.film; // kit.js, film.js
+          const c = chapter("hash"), { layer, box, to, set, pop, pulse, appear, vanish, fly, caption, HIDDEN, SMALL } = c;
+          const tag = "03 · HASH", f = F[FOCUS], M = D.mols.A;
+          const world = layer(), ui = layer(), m = c.mol(world, "A", VIEW.left, { plain: true });
+          const thumbs = F.map((g, n) => box(ui, thumbHTML(g), ...slot(n)));
+          const rows = sizes.map((k, r) => box(ui, rowHTML(k), ...rowLabel(r), { xPercent: -100 }));
+
+          // ---------- one fragment, bond by bond ----------
+          caption(0.3, 10.6, { tag, title: "Hash each bond of a fragment", sub: "Its order, its two elements, and how many bonds each end has inside the fragment." });
+          to([...thumbs, ...rows], 0.4, 1.0, { autoAlpha: 0 });
+          m.light(f.bonds, 0.9, 17.8);
+          const inside = (atom) => f.bonds.filter((b) => M.bonds[b].slice(0, 2).includes(atom)).length; // an atom's bonds inside the fragment
+          const bonds = f.bonds.map((b, k) => {
+  const [i, j, order] = M.bonds[b], y = 430 + k * 190, t = 2.0 + k * 2.7, [p, q] = [i, j].sort((u, v) => M.atoms[u].el.localeCompare(M.atoms[v].el));
+  const mid = m.screen((M.atoms[i].x + M.atoms[j].x) / 2, (M.atoms[i].y + M.atoms[j].y) / 2);
+  const chip = box(ui, `<div class="bondchip">${bondName(b)}</div>`, ...mid, SMALL); pop(chip, t); fly(chip, t + 0.5, t + 1.2, { x: 1010, y }, { arc: 50 });
+  const what = box(ui, `<div class="what">${order === 2 ? "double" : "single"} · ${M.atoms[p].el} with ${inside(p)} bond${inside(p) > 1 ? "s" : ""} here · ${M.atoms[q].el} with ${inside(q)}</div>`, 1100, y, { xPercent: 0, autoAlpha: 0 }); appear(what, t + 1.2);
+  const arrow = box(ui, `<div class="what">hash →</div>`, 1165, y + 64, HIDDEN); appear(arrow, t + 1.8);
+  const hash = box(ui, `<div class="num">${fmt(f.hashes[k])}</div>`, 1380, y + 64, SMALL); pop(hash, t + 2.0, 1.25);
+  [what, chip, arrow].forEach((el) => vanish(el, 11.2));
+  return { hash, value: f.hashes[k] };
+});
+
+// ---------- the bond hashes become one seed ----------
+caption(10.8, 18.2, { tag, title: "Then hash the fragment", sub: "The bond hashes are sorted, so their order never matters, and the number of atoms is added." });
+const X = [1060, 1370, 1640], Y = 500, order = [...bonds].sort((a, b) => a.value - b.value);
+order.forEach((b, rank) => fly(b.hash, 11.5, 12.5, { x: X[rank], y: Y }, { arc: 60 }));
+const count = box(ui, `<div class="num" style="color:var(--accent)">${f.atoms} atoms</div>`, X[2], Y, SMALL); pop(count, 13.0, 1.25);
+const parts = [...bonds.map((b) => b.hash), count];
+parts.forEach((el) => { to(el, 14.2, 14.8, { x: 1350, y: 680, scale: 0.4, autoAlpha: 0 }, "power2.in"); });
+const seed = box(ui, `<div class="sum">seed <span>${fmt(f.seed)}</span></div>`, 1350, 680, SMALL); pop(seed, 14.7);
+vanish(seed, 18.2);
+
+// ---------- every fragment gets its seed ----------
+          const seeds = new Set(F.map((g) => g.seed)).size;
+          caption(18.4, 25.8, { tag, title: `${F.length} fragments, ${seeds} seeds`, sub: "The two C–N bonds give the same seed: to this fingerprint they are one fragment, twice." });
+          [...thumbs, ...rows].forEach((el, n) => appear(el, 18.6 + n * 0.04));
+          const labels = F.map((g, n) => { const el = box(ui, `<div class="seed">${fmt(g.seed)}</div>`, slot(n)[0], slot(n)[1] + 71, HIDDEN); appear(el, 19.4 + n * 0.1); return el; });
+          F.forEach((g, n) => { if (F.filter((h) => h.seed === g.seed).length < 2) return;
+            const card = thumbs[n].querySelector(".thumb");
+            to(card, 21.4, 21.7, { borderColor: AMBER, boxShadow: "0 0 22px rgba(255,181,71,.4)" }); to(card, 25.2, 25.6, { borderColor: "#2b3960", boxShadow: "0 14px 30px -18px rgba(0,0,0,.9)" });
+            to(labels[n].firstChild, 21.4, 21.7, { color: AMBER }); to(labels[n].firstChild, 25.2, 25.6, { color: "#9aa5bd" });
+            pulse(thumbs[n].firstChild, 21.5, 1.1); m.light(g.bonds, 21.4, 25.4, AMBER); });
+          window.__timelines["hash"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

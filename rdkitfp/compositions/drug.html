@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 06, a real drug: the fragments of paracetamol multiply with size, and those of caffeine fill a third of the vector.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #drug { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #drug .col { width: 62px; border-radius: 8px 8px 0 0; background: linear-gradient(180deg, var(--accent), #9a4a12); }
+        #drug .stat { font: 600 40px Inter; color: #8b95ab; text-align: center; }
+        #drug .stat b { color: var(--accent); font: 800 96px Inter; letter-spacing: -.03em; margin-right: 14px; }
+        #drug .stat span { display: block; font: 800 64px Inter; color: #eef1f7; margin-top: 6px; }
+      </style>
+
+      <div id="drug" data-composition-id="drug" data-width="1920" data-height="1080">
+        <div id="drug-bg" class="layer bg"></div>
+        <div id="drug-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, BLUE, fmt, rnd, chapter } = emaki, { VIEW, FULL } = emaki.film; // kit.js, film.js
+          const c = chapter("drug"), { layer, box, to, pop, appear, vanish, caption, HIDDEN, SMALL } = c;
+          const tag = "06 · A REAL DRUG", P = D.fragments.P, K = D.fragments.K, SIZE = D.size.P;
+          const back = layer(), ui = layer(), m = c.mol(back, "P", VIEW.drug, { drawn: false, plain: true });
+
+          // ---------- paracetamol: fragments of every size, counted ----------
+          caption(0.3, 10.0, { tag, title: "Paracetamol", sub: `Fragments multiply: ${P.length} of them, of one to seven bonds.` });
+          m.drawIn(0.5);
+          const sizes = [1, 2, 3, 4, 5, 6, 7], of = (k) => P.filter((f) => f.bonds.length === k), most = Math.max(...sizes.map((k) => of(k).length));
+          const BASE = 506, TALL = 138, chart = sizes.map((k, n) => {
+            const x = 1140 + n * 96, h = (of(k).length / most) * TALL, t = 2.8 + n * 0.85;
+            const bar = box(ui, `<div class="col" style="height:${h}px"></div>`, x, BASE - h / 2, { scaleY: 0, transformOrigin: "50% 100%" }); to(bar, t, t + 0.6, { scaleY: 1 }, "power2.out");
+            const count = box(ui, `<div class="num">${of(k).length}</div>`, x, BASE - h - 26, HIDDEN); appear(count, t + 0.4);
+            const name = box(ui, `<div class="seed">${k}</div>`, x, BASE + 24, HIDDEN); appear(name, t);
+            // a few fragments of this size flash on the molecule
+            of(k).filter((_, j, list) => j % Math.ceil(list.length / 4) === 0).forEach((f, j) => m.light(f.bonds, t + j * 0.2, t + j * 0.2 + 0.8));
+            return [bar, count, name];
+          }).flat();
+          const axis = box(ui, `<div class="lbl">bonds in the fragment</div>`, 1140 + 3 * 96, BASE + 60, HIDDEN); appear(axis, 2.8);
+          const total = box(ui, `<div class="big"><span style="color:var(--accent)">${P.length}</span> fragments</div>`, 1140 + 3 * 96, 288, SMALL); pop(total, 8.8);
+
+          // ---------- its bits on the wall ----------
+          const share = (n) => Math.round((n / SIZE) * 100);
+          caption(10.2, 17.0, { tag, title: `${P.length} fragments, ${D.bits.P.length} bits`, sub: `At RDKit's default length of ${fmt(SIZE)} bits: about ${share(D.bits.P.length)}% of the vector. ECFP4 turns on ${D.ecfp4.P}.` });
+          const wall = c.wall(back, ...FULL, { size: SIZE });
+          gsap.set(wall.el, { autoAlpha: 0, y: FULL[1] + 50 }); to(wall.el, 10.4, 11.3, { autoAlpha: 1, y: FULL[1] });
+          const first = wall.fill(D.bits.P, BLUE, 11.5, 2.0);
+
+          // ---------- caffeine: more rings, far more fragments ----------
+          caption(17.2, 24.8, { tag, title: "Bigger molecules fill it up", sub: `Caffeine has ${K.length} fragments. They turn on ${D.bits.K.length} bits: more than a third of the vector.` });
+          [m.cam, ...chart, axis, total].forEach((el) => vanish(el, 17.8));
+          const big = c.mol(back, "K", VIEW.big, { plain: true }); gsap.set(big.cam, HIDDEN); appear(big.cam, 17.9, 0.7);
+          vanish(first, 18.8); wall.fill(D.bits.K, c.ACCENT, 18.9, 2.6);
+          const stat = box(ui, `<div class="stat"><b>${D.bits.K.length}</b> of ${fmt(SIZE)} bits<span>${share(D.bits.K.length)}%</span></div>`, 1380, 420, HIDDEN); appear(stat, 21.6);
+          c.fadeIn(); c.fadeOut();
+          window.__timelines["drug"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

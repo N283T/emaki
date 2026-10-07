@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Title card over small skeletons growing bond by bond, then the molecule draws itself: N-methylacetamide.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #intro { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+      </style>
+
+      <div id="intro" data-composition-id="intro" data-width="1920" data-height="1080">
+        <div id="intro-bg" class="layer bg"></div>
+        <div id="intro-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { rnd, chapter } = emaki, { VIEW } = emaki.film; // kit.js, film.js
+          const c = chapter("intro"), { svg, canvas, layer, to, vanish, caption } = c;
+
+          // ---------- the title, over skeletons that grow one bond at a time ----------
+          const sky = canvas();
+          for (let n = 0; n < 9; n++) {
+            const a = (n / 9) * Math.PI * 2 + rnd(n) * 0.5, r = 0.7 + rnd(n + 30) * 0.3, t0 = 0.1 + rnd(n + 90) * 0.8;
+            const nodes = [[960 + Math.cos(a) * 800 * r, 540 + Math.sin(a) * 410 * r, rnd(n + 60) * 6.28]];
+            for (let k = 0; k < 7; k++) {
+              const [x, y, dir] = nodes[Math.floor(rnd(n * 17 + k) * nodes.length)], turn = dir + (Math.floor(rnd(n * 31 + k) * 3) - 1) * (Math.PI / 3) + Math.PI / 6;
+              const x2 = x + Math.cos(turn) * 84, y2 = y + Math.sin(turn) * 84, t = t0 + k * 0.24;
+              const line = svg("line", { x1: x, y1: y, x2, y2, stroke: c.ACCENT, "stroke-width": 3, "stroke-opacity": 0.4, pathLength: 1, "stroke-dasharray": "1 1.1", "stroke-dashoffset": 1.05 }, sky);
+              to(line, t, t + 0.3, { strokeDashoffset: 0 }, "power2.inOut");
+              const dot = svg("circle", { cx: x2, cy: y2, r: 7, fill: c.ACCENT, opacity: 0 }, sky); to(dot, t + 0.2, t + 0.45, { autoAlpha: 0.75 });
+              nodes.push([x2, y2, turn]);
+            }
+          }
+          vanish(sky, 3.3, 0.5);
+          caption(0.1, 3.1, { hero: true, title: "RDKit Fingerprint", sub: "Every fragment of a molecule, up to seven bonds" });
+
+          // ---------- the molecule ----------
+          const m = c.mol(layer(), "A", VIEW.wide, { drawn: false });
+          m.drawIn(3.5);
+          caption(3.5, 7.6, { title: "N-methylacetamide", sub: "CC(=O)NC — the molecule from the ECFP4 film" });
+          window.__timelines["intro"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

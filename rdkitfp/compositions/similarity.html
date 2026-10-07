@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 05, similarity: the first molecule is a piece of the second, so all of its bits are on in the second too.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #similarity { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+      </style>
+
+      <div id="similarity" data-composition-id="similarity" data-width="1920" data-height="1080">
+        <div id="similarity-bg" class="layer bg"></div>
+        <div id="similarity-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, BLUE, AMBER, GREEN, chapter } = emaki, { VIEW, WALL } = emaki.film; // kit.js, film.js
+          const c = chapter("similarity"), { layer, box, to, set, pop, pulse, appear, vanish, caption, HIDDEN, SMALL } = c;
+          const tag = "05 · SIMILARITY", real = D.board.rdkit, A = D.bits.A, B = D.bits.B, both = B.filter((b) => A.includes(b)), either = [...new Set([...A, ...B])].sort((p, q) => p - q);
+          const back = layer(), ui = layer(), MID = [960, 405];
+          const wall = c.wall(back, ...WALL, { size: D.size.A }); A.forEach((b) => wall.on(b, BLUE));
+          const mA = c.mol(back, "A", VIEW.a, { plain: true }), mB = c.mol(back, "B", VIEW.b, { drawn: false, plain: true });
+          const who = (key, v, bits, color, more) => box(ui, `<div class="who">${key} · ${D.mols[key].name.toUpperCase()}<b style="color:${color}">${bits} bits on</b></div>`, v.at[0], 545, more);
+          who("A", VIEW.a, A.length, BLUE);
+
+          // ---------- molecule B lights its own bits ----------
+          caption(0.3, 7.6, { tag, title: "Now a second molecule", sub: `N-ethylacetamide, CC(=O)NCC: one carbon longer, ${D.fragments.B.length} fragments.` });
+          mB.drawIn(0.9); appear(who("B", VIEW.b, B.length, AMBER, HIDDEN), 1.6);
+          const key = box(ui, `<div class="key"><span><i style="background:${BLUE}"></i>only in A</span><span><i style="background:${AMBER}"></i>only in B</span><span><i style="background:${GREEN}"></i>in both</span></div>`, 960, WALL[1] - 38, HIDDEN);
+          appear(key, 3.0);
+          B.forEach((b, k) => { const t = 3.2 + k * 0.12; if (A.includes(b)) wall.tint(b, GREEN, t); else wall.on(b, AMBER, t); });
+
+          // ---------- A is a piece of B ----------
+          caption(7.8, 15.6, { tag, title: "Every bit of A is on in B", sub: "A is a piece of B, so each fragment of A is a fragment of B too." });
+          const piece = (dx, dy, html, more = SMALL) => box(ui, html, MID[0] + dx, MID[1] + dy, more);
+          mA.light(mA.M.bonds.map((_, n) => n), 8.4, 15.2, GREEN); mB.light(mA.M.bonds.map((_, n) => n), 9.0, 15.2, GREEN);
+          const all = piece(0, 0, `<div class="big"><span style="color:${GREEN}">${both.length}</span> of ${A.length}</div>`); pop(all, 10.2); vanish(all, 15.5);
+
+          // ---------- which is what this fingerprint was made for ----------
+          caption(15.8, 23.8, { tag, title: "Made for substructure search", sub: "If any bit of a query is off in a molecule, the molecule cannot contain it. No atoms need matching." });
+          const test = [piece(0, -28, `<div class="big mono">A &amp; B == A</div>`), piece(0, 52, `<div class="note" style="color:${GREEN};font-size:32px">so B may contain A</div>`, HIDDEN)];
+          pop(test[0], 16.4); appear(test[1], 17.6); test.forEach((el) => vanish(el, 23.7));
+
+          // ---------- Tanimoto: the bits fly out of the wall into a fraction ----------
+          caption(24.0, 31.2, { tag, title: "Tanimoto similarity", sub: "Bits on in both, divided by bits on in either. The short vector hardly changes it." });
+          const frac = [piece(-215, 0, `<div class="big">T(A, B) =</div>`), piece(30, 0, `<div class="bar"></div>`)];
+          frac.forEach((el) => pop(el, 24.3));
+          // one side of the fraction: a dot leaves each bit, and the number counts them as they land
+          const tally = (dy, bits, start, gap, color) => {
+            const states = ["", ...bits.map((_, k) => k + 1)].map((txt) => piece(30, dy, `<div class="count" style="color:${color}">${txt}</div>`, HIDDEN));
+            bits.forEach((b, k) => {
+              const t = start + k * gap, land = t + 0.6, dot = box(ui, `<div class="dot" style="background:${color};box-shadow:0 0 18px ${color}"></div>`, ...wall.at(b), HIDDEN);
+              set(dot, t, { autoAlpha: 1 }); c.fly(dot, t, land, { x: MID[0] + 30, y: MID[1] + dy, scale: 0.6 }, { arc: 90 }); set(dot, land, { autoAlpha: 0 });
+              set(states[k], land, { autoAlpha: 0 }); set(states[k + 1], land, { autoAlpha: 1 });
+            });
+            return states;
+          };
+          const counts = [...tally(-48, both, 24.8, 0.06, GREEN), ...tally(48, either, 26.6, 0.05, "#eef1f7")];
+          const value = piece(255, 0, `<div class="big">= <span style="color:#ffcf85">${(both.length / either.length).toFixed(2)}</span></div>`); pop(value, 28.6);
+const truth = piece(30, 126, `<div class="note" style="font-size:32px">at 2048 bits <span style="color:${GREEN}">${real.both}</span> / ${real.either} = <span style="color:#ffcf85">${(real.both / real.either).toFixed(2)}</span></div>`, HIDDEN); appear(truth, 29.2);
+
+          // ---------- the same two molecules under the other fingerprints of the series ----------
+          caption(31.4, 38.2, { tag, title: "Same molecules, four fingerprints", sub: "All at 2048 bits. Fragments nest, so a molecule and its extension score high here." });
+          to([wall.el, key], 31.4, 32.0, { autoAlpha: 0.1 }); [...frac, ...counts, value, truth].forEach((el) => vanish(el, 31.9));
+          c.board(ui, 880, 668, "rdkit").forEach((row, n) => row.in(32.3 + n * 0.3));
+          c.fadeOut();
+          window.__timelines["similarity"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>
