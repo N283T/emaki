@@ -11,17 +11,19 @@
     <script src="kit.js"></script>
   </head>
   <body>
-    <div data-hf-id="hf-eczs" id="root" data-composition-id="main" data-start="0" data-duration="92.737" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-eczs" id="root" data-composition-id="main" data-start="0" data-duration="129.737" data-width="1920" data-height="1080">
       <!-- One clip per chapter, each a sub-composition. A clip's start is the film time of its first
-           story second; `node sync-clips.mjs` sets them from the tempo table in kit.js. The outro starts under the end of the similarity chapter. -->
+           story second; `node sync-clips.mjs` sets them from the tempo table in kit.js. The drug chapter starts under the end of the
+           similarity chapter, and the outro under the end of the drug chapter: a later clip lies on top. -->
       <div data-hf-id="hf-1vwm" id="el-intro" class="clip" data-composition-id="intro" data-composition-src="compositions/intro.html" data-start="0" data-duration="3.743" data-track-index="1" data-width="1920" data-height="1080"></div>
       <div data-hf-id="hf-f3xb" id="el-radius0" class="clip" data-composition-id="radius0" data-composition-src="compositions/radius0.html" data-start="3.743" data-duration="17.579" data-track-index="1" data-width="1920" data-height="1080"></div>
       <div data-hf-id="hf-nk7z" id="el-radius1" class="clip" data-composition-id="radius1" data-composition-src="compositions/radius1.html" data-start="21.322" data-duration="23.763" data-track-index="1" data-width="1920" data-height="1080"></div>
       <div data-hf-id="hf-o2sv" id="el-radius2" class="clip" data-composition-id="radius2" data-composition-src="compositions/radius2.html" data-start="45.085" data-duration="13.758" data-track-index="1" data-width="1920" data-height="1080"></div>
       <div data-hf-id="hf-2odz" id="el-unfolded" class="clip" data-composition-id="unfolded" data-composition-src="compositions/unfolded.html" data-start="58.843" data-duration="6.236" data-track-index="1" data-width="1920" data-height="1080"></div>
       <div data-hf-id="hf-p805" id="el-folding" class="clip" data-composition-id="folding" data-composition-src="compositions/folding.html" data-start="65.079" data-duration="13.592" data-track-index="1" data-width="1920" data-height="1080"></div>
-      <div data-hf-id="hf-1ro1" id="el-outro" class="clip" data-composition-id="outro" data-composition-src="compositions/outro.html" data-start="89.338" data-duration="3.399" data-track-index="1" data-width="1920" data-height="1080"></div>
-      <div data-hf-id="hf-btsd" id="el-similarity" class="clip" data-composition-id="similarity" data-composition-src="compositions/similarity.html" data-start="78.671" data-duration="11.267" data-track-index="2" data-width="1920" data-height="1080"></div>
+      <div data-hf-id="hf-1ro1" id="el-outro" class="clip" data-composition-id="outro" data-composition-src="compositions/outro.html" data-start="126.338" data-duration="3.399" data-track-index="2" data-width="1920" data-height="1080"></div>
+      <div id="el-drug" class="clip" data-composition-id="drug" data-composition-src="compositions/drug.html" data-start="96.338" data-duration="30.6" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div data-hf-id="hf-btsd" id="el-similarity" class="clip" data-composition-id="similarity" data-composition-src="compositions/similarity.html" data-start="78.671" data-duration="18.267" data-track-index="2" data-width="1920" data-height="1080"></div>
     </div>
     <script>
       // every chapter animates itself; the film's own timeline has nothing to do

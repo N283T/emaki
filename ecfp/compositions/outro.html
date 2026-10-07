@@ -23,14 +23,14 @@
       <script>
         (() => {
           const { STORY_END, chapter, fade } = emaki; // kit.js
-          const S0 = 96.0, S1 = STORY_END; // story seconds, like every time below
+          const S0 = 133.0, S1 = STORY_END; // story seconds, like every time below
           const { q, div, put, tl, to, rain } = chapter("outro", S0);
           const stage = q("#outro-stage");
 
-          rain(q("#outro-bg"), S1, (t) => 0.6 * fade(t, 96.2, S1 + 1, 1.0, 0.1));
+          rain(q("#outro-bg"), S1, (t) => 0.6 * fade(t, S0 + 0.2, S1 + 1, 1.0, 0.1));
           const title = div(stage, "p title", "ECFP4"), sub = div(stage, "p sub", "radius 2 · 2048 bits · one bit per substructure, give or take a collision");
           put(title, 960, 470, { scale: 1.6, opacity: 0 }); put(sub, 960, 590, { opacity: 0 });
-          to(title, 96.4, 97.0, { opacity: 1 }, "power2.out"); to(sub, 97.0, 97.6, { opacity: 1 }, "power2.out");
+          to(title, S0 + 0.4, S0 + 1.0, { opacity: 1 }, "power2.out"); to(sub, S0 + 1.0, S0 + 1.6, { opacity: 1 }, "power2.out");
           window.__timelines["outro"] = tl;
         })();
       </script>
