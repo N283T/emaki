@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 01, atom codes: three numbers describe an atom, and nine bits hold them.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #atoms { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #atoms .field { font: 700 20px Inter; letter-spacing: .2em; }
+        #atoms .value { font: 700 46px "JetBrains Mono", monospace; }
+        #atoms .word { font: 700 64px "JetBrains Mono", monospace; letter-spacing: .04em; }
+        #atoms .types { font: 500 24px "JetBrains Mono", monospace; color: #5d6884; display: flex; gap: 16px; }
+        #atoms .types span { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        #atoms .types small { font-size: 16px; }
+        #atoms .types .on { color: #eef1f7; font-weight: 800; }
+        #atoms .equals { font: 800 60px Inter; color: #eef1f7; }
+        #atoms .equals small { font: 500 26px Inter; color: #8b95ab; margin-left: 18px; }
+      </style>
+
+      <div id="atoms" data-composition-id="atoms" data-width="1920" data-height="1080">
+        <div id="atoms-bg" class="layer bg"></div>
+        <div id="atoms-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, INK, BACK, bin, codeHTML, chapter } = emaki, { VIEW } = emaki.film; // kit.js, film.js
+          const c = chapter("atoms"), { layer, box, to, set, pop, pulse, appear, vanish, show, fly, caption, HIDDEN, SMALL } = c;
+          const tag = "01 · ATOM CODES", codes = D.codes.A, NBR = "#fbbf24", PI = "#b79cff";
+          const world = layer(), ui = layer(), m = c.mol(world, "A", VIEW.wide);
+
+          // ---------- the carbonyl carbon: three numbers ----------
+          caption(0.2, 8.6, { tag, title: "Three numbers per atom", sub: "Its element, its heavy-atom neighbours, its π electrons." });
+          const V = VIEW.carbonyl, C = 1, me = codes[C], X = 1500;
+          m.move(0.3, 1.5, V); m.ring(C, 1.0, 8.4, "#6cbcff");
+          const card = (name, value, color, y, t) => {
+            const el = box(ui, `<div class="card">${name}<b style="color:${color}">${value}</b></div>`, ...m.at(C, V), { scale: 0.3, autoAlpha: 0 });
+            to(el, t, t + 0.6, { x: X, y, scale: 1, autoAlpha: 1 }); return el;
+          };
+          const cards = [card("Element", me.el, INK[me.el], 470, 1.8)];
+          // its neighbours are counted one by one
+          m.G.nbrs[C].forEach(([nb], k) => {
+            const A = m.M.atoms[C], B = m.M.atoms[nb], t = 3.0 + k * 0.45;
+            const count = m.badge(A.x + (B.x - A.x) * 0.5, A.y + (B.y - A.y) * 0.5, k + 1, NBR);
+            pop(count, t); to(count, 6.6, 6.9, { autoAlpha: 0 }); m.mark(nb, t, 6.9, NBR);
+          });
+          cards.push(card("Heavy neighbours", me.n, NBR, 570, 4.5));
+          // the double bond holds its pi electron
+          m.light([m.G.bond(C, 2)], 5.4, 6.9, PI, false);
+          cards.push(card("π electrons", me.pi, PI, 670, 5.9));
+          // the three numbers become the atom's code, which goes to hang under the atom
+          const made = box(ui, codeHTML(me), X, 570, SMALL);
+          cards.forEach((el) => to(el, 7.0, 7.45, { y: 570, scale: 0.4, autoAlpha: 0 }, "power2.in"));
+          pop(made, 7.35, 1.6);
+          fly(made, 7.9, 8.6, { x: m.tagAt(C, V)[0], y: m.tagAt(C, V)[1], scale: m.tagSize(V) }, { arc: 90 });
+          set(made, 8.6, { autoAlpha: 0 });
+          const tags = []; tags[C] = m.tag(C, codeHTML(me), HIDDEN); set(tags[C], 8.6, { autoAlpha: 1 });
+
+          // ---------- nine bits: 4 for the element, 2 for the pi electrons, 3 for the neighbours ----------
+          caption(8.8, 15.4, { tag, title: "Nine bits, no hash", sub: "The numbers sit side by side, so a code can always be read back." });
+          const TYPES = ["B", "C", "N", "O", "F", "Si", "P", "S", "Cl"], type = TYPES.indexOf(me.el);
+          const cols = [{ name: "ELEMENT", value: type, bits: 4, color: INK[me.el], x: X - 190 }, { name: "π", value: me.pi, bits: 2, color: PI, x: X + 10 }, { name: "NEIGHBOURS", value: me.n, bits: 3, color: NBR, x: X + 200 }];
+          const list = box(ui, `<div class="types">${TYPES.map((s, n) => `<span class="${n === type ? "on" : ""}">${s}<small>${n}</small></span>`).join("")}<span>…</span></div>`, X, 372, HIDDEN);
+          show(list, 9.3, 14.9);
+          const parts = cols.map((f, n) => {
+            const t = 9.4 + n * 0.5;
+            const name = box(ui, `<div class="field" style="color:${f.color}">${f.name}</div>`, f.x, 470, HIDDEN), value = box(ui, `<div class="value" style="color:${f.color}">${f.value}</div>`, f.x, 530, SMALL);
+            const bits = box(ui, `<div class="word" style="color:${f.color}">${bin(f.value, f.bits)}</div>`, f.x, 640, SMALL);
+            appear(name, t); pop(value, t + 0.1); pop(bits, 11.4 + n * 0.35);
+            [name, value].forEach((el) => vanish(el, 14.9));
+            return bits;
+          });
+          // the three groups close up into one word of nine bits
+          [X - 137, X - 5, X + 108].forEach((x, n) => to(parts[n], 12.7, 13.3, { x, y: 660 }, "power2.inOut"));
+          const word = box(ui, `<div class="equals">= ${me.code}<small>the code of this atom</small></div>`, X, 760, HIDDEN);
+          to(word, 13.3, 13.7, { autoAlpha: 1 }); [...parts, word].forEach((el) => vanish(el, 14.9));
+          m.move(15.0, 16.3, VIEW.wide);
+
+          // ---------- every atom gets its code ----------
+          caption(15.6, 20.2, { tag, title: "Every atom gets a code", sub: "Hydrogens are left out: NH has two neighbours, not three." });
+          [0, 2, 3, 4].forEach((n, k) => { const t = 16.6 + k * 0.8; m.ring(n, t, t + 0.75, "#6cbcff"); tags[n] = m.tag(n, codeHTML(codes[n]), SMALL); pop(tags[n], t + 0.2); });
+          caption(20.4, 24.6, { tag, title: "Same numbers, same code", sub: "The two methyls are alike. Nothing here says where they sit." });
+          [0, 4].forEach((n) => { m.ring(n, 20.7, 24.4); pulse(tags[n].firstChild, 21.0); pulse(tags[n].firstChild, 22.4); });
+
+          window.__timelines["atoms"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

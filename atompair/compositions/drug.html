@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 06, a real drug: on paracetamol the pairs reach across the molecule, and its symmetry repeats them.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #drug { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #drug .stat { font: 600 40px Inter; color: #8b95ab; }
+        #drug .stat b { color: #6cbcff; font: 800 96px Inter; letter-spacing: -.03em; margin-right: 14px; }
+      </style>
+
+      <div id="drug" data-composition-id="drug" data-width="1920" data-height="1080">
+        <div id="drug-bg" class="layer bg"></div>
+        <div id="drug-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, BLUE, fmt, chapter } = emaki, { VIEW, pairHTML, FULL } = emaki.film; // kit.js, film.js
+          const c = chapter("drug"), { svg, layer, canvas, box, to, set, pop, pulse, appear, vanish, caption, HIDDEN, SMALL } = c;
+          const tag = "06 · A REAL DRUG", pairs = D.pairs.P, V = VIEW.drug;
+          const world = layer(), chords = canvas(), ui = layer(), m = c.mol(world, "P", V, { drawn: false });
+
+          // ---------- paracetamol, and a line for every pair of its atoms ----------
+          caption(0.3, 7.0, { tag, title: "Paracetamol", sub: `${D.mols.P.atoms.length} atoms make ${pairs.length} pairs.` });
+          m.drawIn(0.5);
+          pairs.forEach((p, k) => {
+            const [x1, y1] = m.at(p.lo), [x2, y2] = m.at(p.hi), t = 3.4 + k * 0.035;
+            const line = svg("line", { x1, y1, x2, y2, stroke: c.ACCENT, "stroke-width": 2, "stroke-opacity": 0.45, pathLength: 1, "stroke-dasharray": "1 1.1", "stroke-dashoffset": 1.05 }, chords);
+            to(line, t, t + 0.5, { strokeDashoffset: 0 }, "power2.inOut");
+          });
+          vanish(chords, 7.0, 0.6);
+
+          // ---------- the furthest pair ----------
+          const far = pairs.reduce((a, b) => (b.d > a.d && D.codes.P[b.lo].el !== D.codes.P[b.hi].el ? b : a));
+          caption(7.2, 14.2, { tag, title: "Pairs reach across the molecule", sub: `CH₃ and OH sit ${far.d} bonds apart. ECFP4 never looks further than two.` });
+          const ends = [far.lo, far.hi].sort((a, b) => a - b);
+          ends.forEach((n) => m.ring(n, 7.6, 14.0));
+          const arrive = m.trace(m.G.path(...ends), 8.2, 14.0, { step: 0.42 });
+          const farToken = box(ui, pairHTML("P", far), 960, 900, SMALL); pop(farToken, arrive + 0.2, 1.3); vanish(farToken, 14.2);
+
+          // ---------- one pair occurs four times, and the count bits follow ----------
+          const most = Math.max(...pairs.map((p) => p.count)), same = pairs.filter((p) => p.count === most && p.d === 1);
+          const distinct = new Set(pairs.map((p) => p.id)).size;
+          caption(14.4, 22.2, { tag, title: "Symmetry repeats pairs", sub: `${pairs.length} pairs, but only ${distinct} different ones. The count bits keep track.` });
+          const token = box(ui, pairHTML("P", same[0]), 640, 905, SMALL); pop(token, 15.0, 1.2);
+          const lens = c.lens(ui, 1240, 895, same[0].block); pop(lens.el, 15.2);
+          const times = box(ui, `<div class="big" style="color:${BLUE}">×<span></span></div>`, 940, 905, HIDDEN), n = times.querySelector("span");
+          same.forEach((p, k) => {
+            const t = 16.0 + k * 1.1;
+            m.light([m.G.bond(p.lo, p.hi)], t, 22.0);
+            set(n, t + 0.3, { textContent: k + 1 }); if (!k) set(times, t + 0.3, { autoAlpha: 1 }); pulse(times.firstChild, t + 0.3, 1.25);
+            const bit = [1, 2, 4, 8].indexOf(k + 1); if (bit >= 0) { lens.on(bit, BLUE, t + 0.4); pulse(lens.cells[bit], t + 0.4, 1.15); }
+          });
+
+          [token, lens.el, times].forEach((el) => vanish(el, 22.4));
+
+          // ---------- and its fingerprint, at full length ----------
+          const apart = new Set(pairs.map((p) => p.block)).size === distinct;
+          caption(22.6, 30.4, { tag, title: "Its fingerprint", sub: `${D.bits.P.length} of ${fmt(D.size.P)} bits, at RDKit's default length.${apart ? " Here no two pairs share a block." : ""}` });
+          m.move(22.6, 23.8, VIEW.drugTop);
+          const wall = c.wall(world, ...FULL, { size: D.size.P, group: 4 });
+          gsap.set(wall.el, { autoAlpha: 0, y: FULL[1] + 50 }); to(wall.el, 23.2, 24.2, { autoAlpha: 1, y: FULL[1] });
+          D.bits.P.forEach((b, k) => wall.on(b, BLUE, 24.5 + k * 0.05));
+          const stat = box(ui, `<div class="stat"><b>${D.bits.P.length}</b> of ${fmt(D.size.P)} bits on</div>`, 1330, 425, HIDDEN); appear(stat, 25.4);
+
+          c.fadeIn(); c.fadeOut();
+          window.__timelines["drug"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

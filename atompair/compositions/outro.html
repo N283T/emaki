@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- The closing card: the title again, and the call that makes this fingerprint.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #outro { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+      </style>
+
+      <div id="outro" data-composition-id="outro" data-width="1920" data-height="1080">
+        <div id="outro-bg" class="layer bg"></div>
+        <div id="outro-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, rnd, chapter } = emaki; // kit.js
+          const c = chapter("outro"), { svg, canvas, layer, box, to, appear, caption, HIDDEN } = c;
+
+          // the points of the title card and every pair of them, fainter
+          const sky = canvas(), N = 13;
+          const pts = Array.from({ length: N }, (_, n) => { const a = (n / N) * Math.PI * 2 + rnd(n) * 0.5, r = 0.72 + rnd(n + 40) * 0.36;
+            return [960 + Math.cos(a) * 780 * r, 540 + Math.sin(a) * 400 * r]; });
+          let k = 0;
+          for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++, k++) {
+            const [x1, y1] = pts[i], [x2, y2] = pts[j], t = 0.1 + rnd(k + 7) * 1.2;
+            const line = svg("line", { x1, y1, x2, y2, stroke: c.ACCENT, "stroke-width": 1.5, "stroke-opacity": 0.16, pathLength: 1, "stroke-dasharray": "1 1.1", "stroke-dashoffset": 1.05 }, sky);
+            to(line, t, t + 0.7, { strokeDashoffset: 0 }, "power2.inOut");
+          }
+          caption(0.2, c.LEN + 1, { hero: true, title: "Atom Pair", sub: "Every pair. Exact distances. Counts kept." });
+          appear(box(layer(), `<div class="api">rdFingerprintGenerator.GetAtomPairGenerator() · RDKit ${D.rdkit}</div>`, 960, 760, HIDDEN), 1.6, 0.8);
+
+          c.fadeIn();
+          window.__timelines["outro"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

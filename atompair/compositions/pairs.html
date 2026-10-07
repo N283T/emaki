@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 02, pairs: two atom codes and the bonds between them make a feature, and every pair of atoms makes one.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #pairs { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+      </style>
+
+      <div id="pairs" data-composition-id="pairs" data-width="1920" data-height="1080">
+        <div id="pairs-bg" class="layer bg"></div>
+        <div id="pairs-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, codeHTML, chapter } = emaki, { VIEW, pairHTML, slot } = emaki.film; // kit.js, film.js
+          const c = chapter("pairs"), { layer, box, to, set, pop, pulse, fly, caption, HIDDEN, SMALL } = c;
+          const tag = "02 · PAIRS", codes = D.codes.A, pairs = D.pairs.A, V = VIEW.left;
+          const world = layer(), ui = layer(), m = c.mol(world, "A", VIEW.wide);
+          codes.forEach((code, n) => m.tag(n, codeHTML(code)));
+          const path = (p) => m.G.path(Math.min(p.lo, p.hi), Math.max(p.lo, p.hi));
+          const tokens = pairs.map((p, n) => box(ui, pairHTML("A", p), ...slot(n), SMALL));
+
+          // ---------- one pair: the two methyls, three bonds apart ----------
+          caption(0.3, 10.0, { tag, title: "Take two atoms", sub: "Their two codes, and the number of bonds on the shortest path between them." });
+          m.move(0.2, 1.6, V);
+          const FIRST = pairs.findIndex((p) => p.d === 3 && codes[p.lo].code === codes[p.hi].code), first = pairs[FIRST], walk = path(first);
+          [first.lo, first.hi].forEach((n) => m.ring(n, 2.0, 9.2));
+          m.trace(walk, 2.9, 9.2, { step: 0.6 });
+          // copies of the two codes and of the count leave the molecule and meet as one token
+          const HOME = [1425, 560], BIG = 1.4, part = 117 * BIG, mid = m.M.atoms[walk[2]];
+          const pieces = [[codeHTML(codes[first.lo]), m.tagAt(first.lo, V), -part, 5.4], [codeHTML(codes[first.hi]), m.tagAt(first.hi, V), part, 5.8],
+            [`<span class="hop">${first.d}</span>`, m.screen((mid.x + m.M.atoms[walk[3]].x) / 2, (mid.y + m.M.atoms[walk[3]].y) / 2, V), 0, 6.2]].map(([html, from, dx, t]) => {
+            const el = box(ui, html, ...from, { scale: m.tagSize(V), autoAlpha: 0 });
+            set(el, t, { autoAlpha: 1 }); fly(el, t, t + 0.7, { x: HOME[0] + dx, y: HOME[1], scale: BIG }, { arc: 70 }); set(el, 7.0, { autoAlpha: 0 });
+            return el;
+          });
+          const token = tokens[FIRST];
+          gsap.set(token, { x: HOME[0], y: HOME[1], scale: BIG }); set(token, 7.0, { autoAlpha: 1 }); pulse(token.firstChild, 7.0, 1.08);
+          fly(token, 8.6, 9.5, { x: slot(FIRST)[0], y: slot(FIRST)[1], scale: 1 }, { arc: 40 });
+
+          // ---------- every other pair ----------
+          caption(10.2, 21.6, { tag, title: "Now every pair", sub: "Five atoms make ten pairs. Near or far, each one is a feature." });
+          pairs.map((p, n) => n).filter((n) => n !== FIRST).forEach((n, k) => {
+            const p = pairs[n], t = 10.9 + k * 1.15;
+            [p.lo, p.hi].forEach((a) => m.ring(a, t, t + 1.05));
+            m.trace(path(p), t, t + 1.05, { step: 0.16 });
+            pop(tokens[n], t + 0.4);
+          });
+
+          // ---------- the two methyls share a code, but not their distances ----------
+          caption(21.8, 29.7, { tag, title: "Distance tells them apart", sub: "The two methyls share a code, but sit one and two bonds from the carbonyl carbon." });
+          const twins = pairs.map((p, n) => n).filter((n) => pairs[n].hi === 1 && codes[pairs[n].lo].el === "C");
+          const rest = tokens.filter((_, n) => !twins.includes(n));
+          to(rest, 22.0, 22.5, { autoAlpha: 0.22 }); to(rest, 29.0, 29.6, { autoAlpha: 1 });
+          twins.forEach((n, k) => { const p = pairs[n], t = 22.4 + k * 1.6;
+            m.trace(m.G.path(p.lo, p.hi), t, 29.2, { step: 0.5 }); pulse(tokens[n].firstChild, t + 0.6, 1.15); pulse(tokens[n].firstChild, 26.6 + k * 0.3, 1.15); });
+
+          window.__timelines["pairs"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>
