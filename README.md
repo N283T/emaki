@@ -18,7 +18,13 @@ together with the code that renders the animation.
 The four fingerprint films follow the same two molecules, N-methylacetamide and N-ethylacetamide, and each
 ends on their Tanimoto similarity under its fingerprint: 0.41, 0.32, 0.00 and 0.79.
 
-### Chemprop
+### D-MPNN
+
+| Animation | Algorithm |
+|---|---|
+| [dmpnn](dmpnn/) | Chemprop's D-MPNN in one film: paracetamol through the whole model, the model training on ESOL, and paracetamol again |
+
+### Chemprop, step by step
 
 A series on [Chemprop](https://github.com/chemprop/chemprop)'s directed message passing neural network (D-MPNN),
 from the molecule in to the prediction out.
@@ -65,7 +71,7 @@ project stands on its own, and keep what differs in three more files:
 After changing the pacing of any of them, `node sync-clips.mjs` moves the clips in `index.html` to match.
 
 The Chemprop films are built the same way, and share a `kit.js` and a `style.css` of their own (identical copies in
-`molgraph`, `messages`, `readout` and `training`): they keep the fingerprint films' camera, molecule and captions, and add directed bonds,
+`molgraph`, `messages`, `readout`, `training` and `dmpnn`): they keep the fingerprint films' camera, molecule and captions, and add directed bonds,
 feature vectors drawn as rows of cells cut into blocks, and hidden vectors drawn as strips. Their `data.py` runs
 Chemprop 2.3.1 itself, so `uv run data.py` installs PyTorch the first time. The hidden vectors in `messages` and `readout` come
 from the weights a new model starts with (seed 0): real numbers, nothing learned yet. `training` trains that same

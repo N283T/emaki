@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- The whole film, one scroll: paracetamol goes through the model and comes out wrong; the camera pulls back over
+         the whole model while it trains on ESOL; then paracetamol, never seen in training, goes through again.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #story { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #story .wl { font: 700 30px Inter; letter-spacing: .18em; color: #8b95ab; text-transform: uppercase; }
+        #story .yhat { font: 800 52px "JetBrains Mono", monospace; color: #eef1f7; padding: 18px 30px; border-radius: 18px; border: 3px solid var(--accent); background: rgba(15,22,40,.96); }
+        #story .yhat small { display: block; font: 600 22px Inter; color: #8b95ab; margin-bottom: 4px; }
+        #story .yhat.real { border-color: #ffb547; color: #ffb547; }
+        #story .round { font: 600 26px Inter; color: #8b95ab; }
+        #story .round b { font: 800 40px "JetBrains Mono", monospace; color: var(--accent); margin-left: 10px; }
+        #story .epoch { font: 600 28px Inter; color: #8b95ab; }
+        #story .epoch b { font: 800 56px "JetBrains Mono", monospace; color: #eef1f7; margin-left: 12px; }
+        #story .res { font: 600 30px Inter; color: #8b95ab; text-align: center; }
+        #story .res b { font: 800 120px "JetBrains Mono", monospace; letter-spacing: -.04em; color: var(--accent); display: block; }
+        #story .res i { font-style: normal; color: #ffb547; font-weight: 800; }
+        #story .api { font: 500 24px "JetBrains Mono", monospace; color: #7f8aa3; }
+      </style>
+
+      <div id="story" data-composition-id="story" data-width="1920" data-height="1080">
+        <div id="story-bg" class="layer bg"></div>
+        <div id="story-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, INK, AMBER, RED, rnd, chapter } = emaki, { num, AT, VIEW } = emaki.film; // kit.js, film.js
+          const c = chapter("story"), { svg, div, layer, box, to, set, pop, pulse, appear, vanish, show, caption, plot, HIDDEN, SMALL } = c;
+          const G = D.graphs.P, M = D.mols.P, K = G.edges.length, seen = D.seen, E = D.epochs, MU = D.scaler.mean;
+          const before = seen[0].P, after = seen[E].P, measured = D.esol.kept.y;
+
+          // ---------- the scroll and its camera ----------
+          // Everything of the model lives on one wide sheet, W, in world units; the camera moves the sheet. cam() puts the
+          // world point (cx, cy) at the screen point (960, sy), zoomed by s.
+          const W = div(layer(), "anchor"), ui = layer();
+          gsap.set(W, { transformOrigin: "0 0" });
+          const pose = (cx, cy, s, sy = 540) => ({ x: 960 - cx * s, y: sy - cy * s, scale: s });
+          const cam = (t0, t1, cx, cy, s, sy) => to(W, t0, t1, pose(cx, cy, s, sy), "power2.inOut");
+          gsap.set(W, pose(AT.mol, AT.y, 0.82));
+          const m = c.mol(W, "P", VIEW.mol, { drawn: false });
+          const sheet = svg("svg", { class: "world", viewBox: "0 0 4400 1400", width: 4400, height: 1400 }, W);
+          const wires = svg("g", {}, sheet), dots = svg("g", {}, sheet);
+          // a label on the sheet
+          const label = (x, y, text, t0, t1) => { const el = box(W, `<div class="wl">${text}</div>`, x, y, HIDDEN); appear(el, t0); if (t1) vanish(el, t1); return el; };
+
+          // ---------- the title, and the molecule ----------
+          caption(0.1, 4.2, { hero: true, tag: "CHEMPROP", title: "D-MPNN", sub: "From a molecule to a prediction, and how it learns to be right" });
+          m.drawIn(4.0);
+
+          // ---------- every bond, both ways ----------
+          caption(4.6, 10.0, { title: "Every bond, both ways", sub: `${M.name}: ${M.bonds.length} bonds → ${K} directed bonds` });
+          G.edges.forEach((_, k) => m.direct(k, 6.0 + k * 0.07));
+
+          // ---------- messages, three rounds ----------
+          caption(10.2, 21.8, { title: "Messages, three rounds", sub: "Each directed bond passes on what reached it, never straight back." });
+          // where a message runs: beside its bond, as the kit draws the arrow
+          const ends = G.edges.map(([u, v]) => { const A = M.atoms[u], B = M.atoms[v], L = Math.hypot(B.x - A.x, B.y - A.y), dx = (B.x - A.x) / L, dy = (B.y - A.y) / L;
+            return [[A.x + dx * 64 - dy * 36, A.y + dy * 64 + dx * 36], [B.x - dx * 64 - dy * 36, B.y - dy * 64 + dx * 36]]; });
+          const OH = M.atoms.findIndex((a) => a.text === "OH"), dist = G.dist[OH];
+          m.ring(OH, 10.6, 22.4);
+          const counter = box(ui, `<div class="round">round<b>1</b></div>`, 1700, 960, HIDDEN), rnum = counter.querySelector("b");
+          for (let r = 1; r <= 3; r++) {
+            const t = 11.2 + (r - 1) * 3.4;
+            if (r === 1) appear(counter, t); else set(rnum, t, { textContent: r });
+            ends.forEach(([[x0, y0], [x1, y1]]) => { const d = svg("circle", { cx: x0, cy: y0, r: 9, fill: c.ACCENT, opacity: 0 }, dots);
+              set(d, t, { autoAlpha: 1 }); to(d, t, t + 1.4, { attr: { cx: x1, cy: y1 } }, "power1.inOut"); to(d, t + 1.2, t + 1.6, { autoAlpha: 0 }); });
+            // how far the OH's word has got
+            dist.forEach((d, a) => { if (d === r) m.mark(a, t + 1.4, 22.4); });
+          }
+          vanish(counter, 22.0);
+
+          // ---------- a vector on every atom ----------
+          caption(22.0, 29.6, { title: "A vector on every atom", sub: `${D.graphs.P.atoms[0].length} numbers, from the messages that arrive` });
+          const top = Math.max(...G.atoms.flat()) * 0.6;
+          const bars = G.atoms.map((values, a) => { const A = M.atoms[a], st = c.heat(W, A.x + 70, A.y - 150, values, { cw: 0.45, h: 22, max: top, upright: true });
+            st.wipe(22.6 + a * 0.12, 0.5); return st; });
+
+          // ---------- one vector for the molecule ----------
+          caption(29.8, 39.6, { title: "Added up: one vector", sub: "Any molecule → the same 300 numbers" });
+          cam(30.0, 32.6, 1750, AT.y, 0.55);
+          bars.forEach((b, a) => to(b.el, 32.8 + a * 0.06, 34.4 + a * 0.06, { x: AT.pool - 8, y: AT.y - 45, autoAlpha: 0 }, "power2.in"));
+          const fp = c.heat(W, AT.pool, AT.y - 195, G.fp, { cw: 1.3, h: 46, max: Math.max(...G.fp) * 0.6, upright: true });
+          fp.wipe(34.6, 0.9);
+          label(AT.pool, AT.y + 250, "sum ÷ 100", 35.0);
+
+          // ---------- two layers to a prediction ----------
+          caption(39.8, 45.6, { title: "Two layers to a prediction", sub: "log S: how well it dissolves in water" });
+          cam(40.0, 42.4, 2980, AT.y, 0.72);
+          const HID = 12, ny = (i) => AT.y + (i - (HID - 1) / 2) * 54, taps = Array.from({ length: 8 }, (_, j) => AT.y - 170 + j * (340 / 7));
+          const lines = [];
+          taps.forEach((y0, j) => { for (let i = 0; i < HID; i++) lines.push(svg("line", { x1: AT.pool + 26, y1: y0, x2: AT.hidden, y2: ny(i), stroke: c.ACCENT, "stroke-width": 1.5, "stroke-opacity": 0.15 + rnd(j * 31 + i) * 0.35, opacity: 0 }, wires)); });
+          for (let i = 0; i < HID; i++) lines.push(svg("line", { x1: AT.hidden, y1: ny(i), x2: AT.out, y2: AT.y, stroke: c.ACCENT, "stroke-width": 2, "stroke-opacity": 0.2 + rnd(i + 900) * 0.4, opacity: 0 }, wires));
+          lines.forEach((l, n) => appear(l, 40.6 + (n % 24) * 0.04, 0.6));
+          const nodes = Array.from({ length: HID }, (_, i) => svg("circle", { cx: AT.hidden, cy: ny(i), r: 14, fill: "#141c33", stroke: c.ACCENT, "stroke-width": 3, opacity: 0 }, dots));
+          nodes.forEach((n, i) => appear(n, 41.4 + i * 0.04, 0.3));
+          const out = svg("circle", { cx: AT.out, cy: AT.y, r: 22, fill: c.ACCENT, opacity: 0 }, dots); appear(out, 42.6);
+          const yhat = box(W, `<div class="yhat"><small>predicted</small>${num(before)}</div>`, AT.out + 300, AT.y - 80, SMALL); pop(yhat, 43.2);
+
+          // ---------- and it is wrong ----------
+          caption(45.8, 51.6, { title: "And it is wrong", sub: `Untrained: ${num(before)} for everything. Measured: ${num(measured)}.` });
+          const real = box(W, `<div class="yhat real"><small>measured</small>${num(measured)}</div>`, AT.out + 300, AT.y + 110, SMALL); pop(real, 46.6);
+
+          // ---------- it learns from others ----------
+          caption(51.8, 56.4, { title: `So it learns from ${D.split.train} others`, sub: "Measured solubilities. Paracetamol is not among them." });
+          cam(51.8, 54.6, 2150, AT.y, 0.42, 330);
+          [yhat, real].forEach((el) => vanish(el, 52.4));
+          to(m.cam, 52.4, 53.4, { autoAlpha: 0 });
+
+          // ---------- training ----------
+          caption(56.6, 79.8, { title: `Predict, compare, nudge every weight`, sub: `${E} epochs` });
+          // the training molecules, each drawn small where paracetamol was, as it goes through
+          const parade = D.parade.map((p) => {
+            const xs = p.atoms.map((a) => a[0]), ys = p.atoms.map((a) => a[1]), cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+            const s = Math.min(1, 1000 / (Math.max(...xs) - Math.min(...xs) + 1), 560 / (Math.max(...ys) - Math.min(...ys) + 1));
+            const g = svg("g", { opacity: 0, transform: `translate(${AT.mol} ${AT.y}) scale(${s}) translate(${-cx} ${-cy})` }, dots);
+            p.bonds.forEach(([i, j, order]) => { const [x1, y1] = p.atoms[i], [x2, y2] = p.atoms[j];
+              svg("line", { x1, y1, x2, y2, stroke: "#c8d0e0", "stroke-width": order === 2 ? 14 : 8, "stroke-linecap": "round" }, g); });
+            p.atoms.forEach(([x, y, el]) => svg("circle", { cx: x, cy: y, r: 30, fill: "#16203a", stroke: INK[el] || AMBER, "stroke-width": 7 }, g));
+            return g;
+          });
+          // each pass: a molecule appears, its prediction runs forward, its error runs back, the weights move
+          let t = 57.0, d = 2.2;
+          parade.forEach((g, i) => {
+            const fwd = svg("circle", { cx: 1500, cy: AT.y, r: 20, fill: c.ACCENT, opacity: 0 }, dots), back = svg("circle", { cx: AT.out, cy: AT.y, r: 20, fill: RED, opacity: 0 }, dots);
+            appear(g, t, 0.2); vanish(g, t + d, 0.2);
+            set(fwd, t + 0.1, { autoAlpha: 1 }); to(fwd, t + 0.1, t + d * 0.45, { attr: { cx: AT.out } }, "power1.in"); set(fwd, t + d * 0.45, { autoAlpha: 0 });
+            set(back, t + d * 0.5, { autoAlpha: 1 }); to(back, t + d * 0.5, t + d * 0.95, { attr: { cx: 1500 } }, "power1.in"); set(back, t + d * 0.95, { autoAlpha: 0 });
+            lines.forEach((l, n) => to(l, t + d * 0.6, t + d * 0.95, { attr: { "stroke-opacity": 0.12 + rnd(i * 977 + n) * 0.5 } }));
+            t += d; d *= 0.92;
+          });
+          // the epochs, the loss, and the test set, in step
+          const at = (e) => 57.4 + 21.4 * Math.pow(e / E, 0.7);
+          const epoch = box(ui, `<div class="epoch">epoch<b>0</b></div>`, 1640, 600, HIDDEN), en = epoch.querySelector("b"); appear(epoch, 56.8);
+          for (let e = 1; e <= E; e++) set(en, at(e), { textContent: e });
+          const L = plot(ui, 200, 610, 620, 300, { xr: [0, E], yr: [0, 1], xticks: [0, 10, 20, 30, 40, 50].map((e) => [e, String(e)]), yticks: [[0, "0"], [1, "1"]], xlabel: "epoch", ylabel: "loss" });
+          gsap.set(L.s, HIDDEN); appear(L.s, 56.8);
+          D.loss.train.forEach((v, i) => { if (!i) return; const seg = svg("line", { x1: L.px(i), y1: L.py(D.loss.train[i - 1]), x2: L.px(i + 1), y2: L.py(v), stroke: c.ACCENT, "stroke-width": 4, "stroke-linecap": "round", opacity: 0 }, L.g); set(seg, at(i + 1), { autoAlpha: 1 }); });
+          const R = [-9, 2], TK = [-8, -4, 0].map((v) => [v, num(v, 0)]);
+          const S = plot(ui, 1040, 600, 360, 360, { xr: R, yr: R, xticks: TK, yticks: TK, xlabel: "measured", ylabel: "predicted" });
+          gsap.set(S.s, HIDDEN); appear(S.s, 56.8);
+          svg("line", { x1: S.px(R[0]), y1: S.py(R[0]), x2: S.px(R[1]), y2: S.py(R[1]), stroke: "#c8d0e0", "stroke-width": 2, "stroke-dasharray": "8 8" }, S.g);
+          const keys = [0, 1, 2, 3, 4, 5, 6, 8, 10, 13, 16, 20, 25, 30, 40, 50];
+          D.test.y.forEach((y, i) => { const p = svg("circle", { cx: S.px(y), cy: S.py(seen[0].test[i]), r: 5, fill: c.ACCENT, "fill-opacity": 0.85 }, S.g);
+            keys.slice(1).forEach((e, k) => to(p, at(keys[k]), at(e), { attr: { cy: S.py(seen[e].test[i]) } }, "none")); });
+          [epoch, L.s, S.s].forEach((el) => vanish(el, 80.6));
+
+          // ---------- paracetamol, again ----------
+          caption(80.4, 86.2, { title: "Now paracetamol again", sub: "Never seen in training" });
+          cam(80.4, 82.6, 1960, AT.y, 0.46, 420);
+          to(m.cam, 81.0, 81.8, { autoAlpha: 1 });
+          const fwd = svg("circle", { cx: 1500, cy: AT.y, r: 20, fill: c.ACCENT, opacity: 0 }, dots);
+          set(fwd, 82.6, { autoAlpha: 1 }); to(fwd, 82.6, 84.2, { attr: { cx: AT.out } }, "power1.inOut"); set(fwd, 84.2, { autoAlpha: 0 }); pulse(out, 84.2, 1.6);
+          const res = box(ui, `<div class="res">predicted<b>${num(after)}</b>measured <i>${num(measured)}</i></div>`, 960, 820, SMALL); pop(res, 84.4);
+
+          // ---------- the result ----------
+          caption(86.4, 92.2, { title: `Off by ${Math.abs(after - measured).toFixed(2)}, not ${Math.abs(before - measured).toFixed(2)}`, sub: `${D.split.test} unseen test molecules: R² ${D.r2.toFixed(2)}` });
+          [W, res].forEach((el) => vanish(el, 92.8, 0.6));
+          caption(93.0, c.LEN + 1, { hero: true, title: "D-MPNN", sub: "Messages on directed bonds, a sum, two layers, and fifty epochs of nudging." });
+          appear(box(ui, `<div class="api">chemprop train --data-path delaney.csv --task-type regression · Chemprop ${D.chemprop}</div>`, 960, 780, HIDDEN), 94.4, 0.8);
+
+          c.fadeIn();
+          window.__timelines["story"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

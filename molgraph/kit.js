@@ -1,6 +1,6 @@
 // ============================================================================
-// The engine of the Chemprop films. molgraph/, messages/, readout/ and
-// training/ carry identical copies of this file. It grew out of the
+// The engine of the Chemprop films. molgraph/, messages/, readout/, training/
+// and dmpnn/ carry identical copies of this file. It grew out of the
 // fingerprint films' kit: the camera, the molecule, captions and the timeline
 // helpers are theirs, and what is new draws what Chemprop works with: directed
 // bonds, feature vectors as rows of cells cut into blocks, hidden vectors as

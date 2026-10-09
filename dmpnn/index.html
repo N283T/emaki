@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <title>D-MPNN</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="data.js"></script>
+    <script src="kit.js"></script>
+    <script src="film.js"></script>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="100" data-width="1920" data-height="1080">
+      <!-- The film is one clip, a sub-composition. `node sync-clips.mjs` sets its duration from film.js. -->
+      <div id="el-story" class="clip" data-composition-id="story" data-composition-src="compositions/story.html" data-start="0" data-duration="100" data-track-index="1" data-width="1920" data-height="1080"></div>
+    </div>
+    <script>
+      // every chapter animates itself; the film's own timeline has nothing to do
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>
