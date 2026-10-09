@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 01, the measurements: ESOL's solubilities as a histogram, what log S means, and the split, with paracetamol kept out.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #data { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #data .pin { font: 600 22px Inter; color: #ffb547; padding: 6px 14px; border-radius: 10px; border: 2px solid #ffb547; background: rgba(15,22,40,.96); }
+        #data .pin b { font-weight: 800; }
+        #data .part { height: 48px; border-radius: 10px; }
+        #data .partname { font: 600 24px Inter; color: #8b95ab; }
+        #data .partname b { color: #eef1f7; font-weight: 800; }
+      </style>
+
+      <div id="data" data-composition-id="data" data-width="1920" data-height="1080">
+        <div id="data-bg" class="layer bg"></div>
+        <div id="data-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, AMBER, fmt, chapter } = emaki, { num } = emaki.film; // kit.js, film.js
+          const c = chapter("data"), { layer, box, div, to, set, pop, pulse, appear, vanish, show, caption, plot, svg, HIDDEN, SMALL } = c;
+          const tag = "01 · MEASUREMENTS", S = D.split, n = D.esol.n;
+          const ui = layer();
+
+          // ---------- a histogram of the training set ----------
+          caption(0.3, 9.6, { tag, title: `${fmt(n)} measured solubilities`, sub: "ESOL: how much of each molecule dissolves in water, as log S, the log₁₀ of moles per litre." });
+          const LO = -12, HI = 2, BIN = 0.5, bins = Array.from({ length: (HI - LO) / BIN }, () => 0);
+          D.train_y.forEach((y) => bins[Math.min(bins.length - 1, Math.floor((y - LO) / BIN))]++);
+          const top = Math.ceil(Math.max(...bins) / 20) * 20;
+          const P = plot(ui, 360, 330, 1200, 440, { xr: [LO, HI], yr: [0, top], xticks: [-12, -10, -8, -6, -4, -2, 0, 2].map((v) => [v, num(v, 0)]), yticks: [0, top / 2, top].map((v) => [v, String(v)]), xlabel: "log S  ·  log₁₀ mol/L", ylabel: "molecules" });
+          gsap.set(P.s, HIDDEN); appear(P.s, 0.8);
+          bins.forEach((count, b) => { if (!count) return; const x0 = P.px(LO + b * BIN), x1 = P.px(LO + (b + 1) * BIN), y = P.py(count);
+            const r = svg("rect", { x: x0 + 2, y, width: x1 - x0 - 4, height: P.py(0) - y, fill: c.ACCENT, rx: 3 }, P.g);
+            gsap.set(r, { scaleY: 0, svgOrigin: `${x0} ${P.py(0)}` }); to(r, 1.4 + b * 0.04, 1.9 + b * 0.04, { scaleY: 1 }); });
+          // what the scale means: one step is ten times as soluble
+          const marks = [[0, "1 mol/L"], [-3, "1 mmol/L"], [-6, "1 µmol/L"]].map(([v, text], k) => { const el = box(ui, `<div class="note" style="color:#c8d0e0">${text}</div>`, P.px(v), 300, HIDDEN); appear(el, 4.6 + k * 0.4); return el; });
+
+          // ---------- paracetamol is kept out ----------
+          const K = D.esol.kept;
+          caption(9.8, 16.4, { tag, title: "One is kept out", sub: `Paracetamol is in ESOL as ${K.name}, log S = ${num(K.y)}. It is kept away from training, for the end of the film.` });
+          const px = P.px(K.y), pin = box(ui, `<div class="pin"><b>paracetamol</b> ${num(K.y)}</div>`, px, 270, SMALL); marks.forEach((el) => vanish(el, 10.2)); pop(pin, 10.6);
+          const line = svg("line", { x1: px, y1: 290, x2: px, y2: P.py(0), stroke: AMBER, "stroke-width": 3, "stroke-dasharray": "8 8", opacity: 0 }, P.g); appear(line, 10.8);
+
+          // ---------- the split ----------
+          caption(16.6, 23.6, { tag, title: "Three sets", sub: `A random 80/10/10 split: ${fmt(S.train)} to train on, ${S.val} to watch while training, and ${S.test} to test at the end.` });
+          [P.s, pin].forEach((el) => to(el, 16.8, 17.3, { autoAlpha: 0.15 }));
+          const W = 1400, X0 = 260, Y = 880, total = S.train + S.val + S.test;
+          let x = X0;
+          [["train", S.train, c.ACCENT], ["validation", S.val, "#a3e635"], ["test", S.test, AMBER]].forEach(([name, k, color], i) => {
+            const w = (k / total) * W, t = 17.4 + i * 0.6, part = box(ui, `<div class="part" style="width:${w - 6}px;background:${color}"></div>`, x + w / 2, Y, { scaleX: 0, autoAlpha: 1 });
+            to(part, t, t + 0.6, { scaleX: 1 });
+            const lbl = box(ui, `<div class="partname"><b>${fmt(k)}</b> ${name}</div>`, x + w / 2, Y + (i === 1 ? -56 : 56), HIDDEN); appear(lbl, t + 0.4);
+            x += w;
+          });
+          const kept = box(ui, `<div class="partname"><b>+1</b> kept out</div>`, X0 + W + 110, Y, HIDDEN); appear(kept, 19.6);
+
+          c.fadeOut();
+          window.__timelines["data"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

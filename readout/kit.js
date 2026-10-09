@@ -1,12 +1,13 @@
 // ============================================================================
-// The engine of the Chemprop films. molgraph/, messages/ and readout/ carry
-// identical copies of this file. It grew out of the fingerprint films' kit:
-// the camera, the molecule, captions and the timeline helpers are theirs, and
-// what is new draws what Chemprop works with: directed bonds, feature vectors
-// as rows of cells cut into blocks, and hidden vectors as strips. What differs
-// per film is data.js (the numbers, written by data.py), film.js (the chapters
-// and their pacing) and the chapters. Nothing touches the DOM while it loads,
-// so the page can load it in <head>. Everything hangs off one global, `emaki`.
+// The engine of the Chemprop films. molgraph/, messages/, readout/ and
+// training/ carry identical copies of this file. It grew out of the
+// fingerprint films' kit: the camera, the molecule, captions and the timeline
+// helpers are theirs, and what is new draws what Chemprop works with: directed
+// bonds, feature vectors as rows of cells cut into blocks, hidden vectors as
+// strips, and charts. What differs per film is data.js (the numbers, written
+// by data.py), film.js (the chapters and their pacing) and the chapters.
+// Nothing touches the DOM while it loads, so the page can load it in <head>.
+// Everything hangs off one global, `emaki`.
 // ============================================================================
 window.emaki = window.emaki || (() => {
   const D = window.emakiData;
@@ -170,7 +171,7 @@ window.emaki = window.emaki || (() => {
       // ----- directed bonds -----
       // Directed bond k (D.graphs[key].edges[k], from atom u to atom v) is an arrow beside its bond, on the
       // right of the way it points, so that the two directions of a bond run on either side of it.
-      const E = D.graphs[key]?.edges ?? [], SIDE = 36, CLEAR = 64; // a film without directed bonds has none
+      const E = D.graphs?.[key]?.edges ?? [], SIDE = 36, CLEAR = 64; // a film without directed bonds has none
       const along = (k) => { const [u, w] = E[k], A = M.atoms[u], B = M.atoms[w], L = Math.hypot(B.x - A.x, B.y - A.y);
         const dx = (B.x - A.x) / L, dy = (B.y - A.y) / L; return { A, B, L, dx, dy, nx: -dy, ny: dx }; };
       // the world point beside directed bond k, `off` from the bond's axis, halfway along
@@ -342,7 +343,23 @@ window.emaki = window.emaki || (() => {
       return { rows: out, W: out[0].W, H: rows.length * step - rowgap, step, left: x - out[0].W / 2, top: y };
     };
 
-    return { id, root, stage, LEN, ACCENT, svg, div, layer, canvas, box, HIDDEN, SMALL, at, tl, to, set, appear, vanish, show, fadeIn, fadeOut, pop, pulse, fly, link, caption, mol, vec, matrix, zoom, heat, strips };
+    // ----- a chart -----
+    // Axes round a box w × h pixels, its top left at the screen point (x, y). xr and yr are the ranges [lo, hi] the
+    // axes span, and xticks and yticks the values to mark on them ([value, label]). Returns a group to draw in, and
+    // px and py, which turn a value into a pixel.
+    const plot = (parent, x, y, w, h, { xr, yr, xticks = [], yticks = [], xlabel = "", ylabel = "" }) => {
+      const s = svg("svg", { class: "layer", viewBox: "0 0 1920 1080", width: 1920, height: 1080 }, parent);
+      const px = (v) => x + ((v - xr[0]) / (xr[1] - xr[0])) * w, py = (v) => y + h - ((v - yr[0]) / (yr[1] - yr[0])) * h;
+      const axes = svg("g", {}, s), text = (tx, ty, str, more = {}) => { const e = svg("text", { x: tx, y: ty, fill: "#9aa5bd", "font-family": "JetBrains Mono", "font-size": 18, "text-anchor": "middle", ...more }, axes); e.textContent = str; return e; };
+      xticks.forEach(([v, lbl]) => { svg("line", { x1: px(v), y1: y, x2: px(v), y2: y + h, stroke: "#1c2640", "stroke-width": 1.5 }, axes); text(px(v), y + h + 30, lbl); });
+      yticks.forEach(([v, lbl]) => { svg("line", { x1: x, y1: py(v), x2: x + w, y2: py(v), stroke: "#1c2640", "stroke-width": 1.5 }, axes); text(x - 14, py(v) + 6, lbl, { "text-anchor": "end" }); });
+      svg("path", { d: `M ${x} ${y} L ${x} ${y + h} L ${x + w} ${y + h}`, fill: "none", stroke: "#46557c", "stroke-width": 2 }, axes);
+      if (xlabel) text(x + w / 2, y + h + 66, xlabel, { "font-family": "Inter", "font-size": 21, "font-weight": 600 });
+      if (ylabel) text(x - 70, y + h / 2, ylabel, { "font-family": "Inter", "font-size": 21, "font-weight": 600, transform: `rotate(-90 ${x - 70} ${y + h / 2})` });
+      return { s, axes, g: svg("g", {}, s), px, py };
+    };
+
+    return { id, root, stage, LEN, ACCENT, svg, div, layer, canvas, box, HIDDEN, SMALL, at, tl, to, set, appear, vanish, show, fadeIn, fadeOut, pop, pulse, fly, link, caption, mol, vec, matrix, zoom, heat, strips, plot };
   }
 
   return { D, INK, BACK, BLUE, AMBER, GREEN, RED, MUTED, fmt, rnd, graph, centre, view, arrowText, bondText, cut, chapter };

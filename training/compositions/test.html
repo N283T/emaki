@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 06, the test: how far the 114 unseen molecules are off at the end, in log units and in concentration.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #test { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #test .stat { font: 600 30px Inter; color: #8b95ab; }
+        #test .stat b { font: 800 64px "JetBrains Mono", monospace; color: #eef1f7; margin-left: 12px; }
+      </style>
+
+      <div id="test" data-composition-id="test" data-width="1920" data-height="1080">
+        <div id="test-bg" class="layer bg"></div>
+        <div id="test-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, AMBER, chapter } = emaki, { num, RANGE, TICKS, SCATTER: S } = emaki.film; // kit.js, film.js
+          const c = chapter("test"), { layer, box, to, set, pop, pulse, appear, vanish, show, caption, plot, svg, HIDDEN, SMALL } = c;
+          const tag = "06 · MOLECULES IT NEVER SAW", T = D.test, pred = D.seen[D.epochs].test;
+          const ui = layer();
+          const P = plot(ui, S.x, S.y, S.w, S.h, { xr: RANGE, yr: RANGE, xticks: TICKS, yticks: TICKS, xlabel: "measured log S", ylabel: "predicted log S" });
+          svg("line", { x1: P.px(RANGE[0]), y1: P.py(RANGE[0]), x2: P.px(RANGE[1]), y2: P.py(RANGE[1]), stroke: "#c8d0e0", "stroke-width": 2, "stroke-dasharray": "10 10" }, P.g);
+          // a band as wide as the typical error, on either side of the line
+          const R = D.rmse, band = svg("path", { d: `M ${P.px(RANGE[0])} ${P.py(RANGE[0] + R)} L ${P.px(RANGE[1] - R)} ${P.py(RANGE[1])} L ${P.px(RANGE[1])} ${P.py(RANGE[1])} L ${P.px(RANGE[1])} ${P.py(RANGE[1] - R)} L ${P.px(RANGE[0] + R)} ${P.py(RANGE[0])} L ${P.px(RANGE[0])} ${P.py(RANGE[0])} Z`, fill: AMBER, opacity: 0 }, P.g);
+          T.y.forEach((y, i) => svg("circle", { cx: P.px(y), cy: P.py(pred[i]), r: 7, fill: c.ACCENT, "fill-opacity": 0.8 }, P.g));
+
+          // ---------- the error ----------
+          caption(0.3, 10.6, { tag, title: `Off by ${R.toFixed(2)}, typically`, sub: `The root mean squared error on the test set is ${R.toFixed(2)} log units: a factor of about ${Math.pow(10, R).toFixed(0)} in concentration.` });
+          to(band, 1.4, 2.0, { autoAlpha: 0.16 });
+          const big = box(ui, `<div class="stat">RMSE <b>${R.toFixed(2)}</b></div>`, 1640, 480, SMALL); pop(big, 1.8);
+          const fac = box(ui, `<div class="note">×${Math.pow(10, R).toFixed(1)} in mol/L</div>`, 1640, 550, HIDDEN); appear(fac, 2.6);
+
+          // ---------- how much it explains ----------
+          caption(10.8, 21.6, { tag, title: `R² = ${D.r2.toFixed(2)}`, sub: `The model accounts for ${Math.round(D.r2 * 100)}% of how the test molecules' solubilities vary. For 50 epochs on ${D.split.train} molecules, from weights that started random.` });
+          const r2 = box(ui, `<div class="stat">R² <b>${D.r2.toFixed(2)}</b></div>`, 1640, 660, SMALL); pop(r2, 11.6);
+
+          c.fadeIn(); c.fadeOut();
+          window.__timelines["test"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

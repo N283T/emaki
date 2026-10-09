@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 04, a step: the error flows back through the model, Adam nudges every weight, and the learning rate rises and falls.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #step { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #step .stage { padding: 18px 22px; border-radius: 16px; border: 2px solid #3a4a74; background: rgba(15,22,40,.96); }
+        #step .stage b { font: 800 26px Inter; color: #eef1f7; }
+      </style>
+
+      <div id="step" data-composition-id="step" data-width="1920" data-height="1080">
+        <div id="step-bg" class="layer bg"></div>
+        <div id="step-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, AMBER, RED, fmt, chapter } = emaki, { num } = emaki.film; // kit.js, film.js
+          const c = chapter("step"), { layer, canvas, box, to, set, pop, pulse, appear, vanish, show, link, caption, plot, svg, HIDDEN, SMALL } = c;
+          const tag = "04 · ONE STEP", steps = D.steps.length, per = steps / D.epochs;
+          const lines = canvas(), ui = layer();
+
+          // ---------- back through the model ----------
+          caption(0.3, 9.6, { tag, title: "Back through the model", sub: `A batch of ${D.batch} goes forward to its loss; the gradient of the loss runs back through the FFN, the aggregation and the message passing.` });
+          const Y = 420, xs = [300, 700, 1100, 1500];
+          const boxes = ["BondMessagePassing", "NormAggregation", "RegressionFFN", "loss"].map((name, k) => { const el = box(ui, `<div class="stage"><b>${name}</b></div>`, xs[k], Y, SMALL); pop(el, 0.8 + k * 0.3); return el; });
+          [0, 1, 2].forEach((k) => link(lines, [xs[k] + 170, Y - 22], [xs[k + 1] - 170, Y - 22], 1.6 + k * 0.4, null, "#46557c"));
+          [2, 1, 0].forEach((k, n) => link(lines, [xs[k + 1] - 170, Y + 22], [xs[k] + 170, Y + 22], 3.6 + n * 0.6, null, RED));
+          const grad = box(ui, `<div class="note" style="color:#ff5d5d">∂ loss / ∂ weight, for all ${fmt(318301)} weights</div>`, 900, Y + 90, HIDDEN); appear(grad, 5.4);
+
+          // ---------- the learning rate ----------
+          const LR = D.lr, top = Math.max(...LR);
+          caption(9.8, 23.6, { tag, title: "Adam, at a changing pace", sub: `Each of the ${steps} steps moves every weight a little. The step size climbs to ${top} over two epochs, then slowly falls back to ${LR.at(-1)}.` });
+          [...boxes, grad].forEach((el) => to(el, 10.0, 10.5, { autoAlpha: 0.2 })); to(lines, 10.0, 10.5, { autoAlpha: 0.2 });
+          const P = plot(ui, 360, 600, 1200, 300, { xr: [0, steps], yr: [0, top * 1.1], xticks: [0, 10, 20, 30, 40, 50].map((e) => [e * per, String(e)]), yticks: [[0, "0"], [top, String(top)]], xlabel: "epoch", ylabel: "learning rate" });
+          gsap.set(P.s, HIDDEN); appear(P.s, 10.4);
+          const path = svg("path", { d: LR.map((v, i) => `${i ? "L" : "M"} ${P.px(i).toFixed(1)} ${P.py(v).toFixed(1)}`).join(" "), fill: "none", stroke: c.ACCENT, "stroke-width": 4, pathLength: 1, "stroke-dasharray": "1 1.1", "stroke-dashoffset": 1.05 }, P.g);
+          to(path, 11.0, 15.0, { strokeDashoffset: 0 }, "power1.inOut");
+          const warm = box(ui, `<div class="note">warm-up</div>`, P.px(per), 580, HIDDEN); appear(warm, 12.0);
+
+          c.fadeIn(); c.fadeOut();
+          window.__timelines["step"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

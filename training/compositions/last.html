@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 07, what changed: the last layer's 300 weights and its bias, before training and after.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #last { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+      </style>
+
+      <div id="last" data-composition-id="last" data-width="1920" data-height="1080">
+        <div id="last-bg" class="layer bg"></div>
+        <div id="last-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, chapter } = emaki, { num } = emaki.film; // kit.js, film.js
+          const c = chapter("last"), { layer, box, to, set, pop, pulse, appear, vanish, show, caption, HIDDEN, SMALL } = c;
+          const tag = "07 · WHAT CHANGED", A = D.seen[0].last, B = D.seen[D.epochs].last, n = A.length - 1;
+          const ui = layer(), top = Math.max(...A.slice(0, n).map(Math.abs), ...B.slice(0, n).map(Math.abs)) * 0.6;
+
+          // ---------- the last layer, before and after ----------
+          caption(0.3, 9.4, { tag, title: "Every weight moved", sub: `The last layer, the ${n} weights that turn the hidden layer into ŷ, before training and after ${D.epochs} epochs. Blue is negative.` });
+          const rows = [[A, "epoch 0", 1.2], [B, `epoch ${D.epochs}`, 2.6]].map(([w, name, t], k) => {
+            const y = 440 + k * 150, st = c.heat(ui, 1010, y, w.slice(0, n), { cw: 3, h: 60, max: top });
+            const lbl = box(ui, `<div class="rowlbl">${name}</div>`, 1010 - 468, y + 30, { xPercent: -100, autoAlpha: 0 }); appear(lbl, t); st.wipe(t, 1.0);
+            const bias = box(ui, `<div class="note">bias ${num(w[n], 3)}</div>`, 1010 + 450, y + 90, { xPercent: -100, autoAlpha: 0 }); appear(bias, t + 1.0);
+            return st;
+          });
+
+          // ---------- how far ----------
+          const moved = A.slice(0, n).map((w, i) => Math.abs(B[i] - w)), mean = moved.reduce((a, b) => a + b, 0) / n;
+          caption(9.6, 17.6, { tag, title: "Small moves, all together", sub: `On average each of these weights moved by ${mean.toFixed(3)}. So did the other ${(318301 - n - 1).toLocaleString("en-US")}, in the layers before.` });
+
+          c.fadeIn(); c.fadeOut();
+          window.__timelines["last"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

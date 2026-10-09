@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 03, how wrong: the untrained model's predictions for the test set against what was measured, and the mean squared error.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #loss { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #loss .formula { font: 600 30px "JetBrains Mono", monospace; color: #c8d0e0; }
+        #loss .val { font: 600 26px Inter; color: #8b95ab; }
+        #loss .val b { font: 800 34px "JetBrains Mono", monospace; color: #eef1f7; margin-left: 8px; }
+      </style>
+
+      <div id="loss" data-composition-id="loss" data-width="1920" data-height="1080">
+        <div id="loss-bg" class="layer bg"></div>
+        <div id="loss-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, AMBER, RED, chapter } = emaki, { num, RANGE, TICKS, SCATTER: S } = emaki.film; // kit.js, film.js
+          const c = chapter("loss"), { layer, box, to, set, pop, pulse, appear, vanish, show, caption, plot, svg, HIDDEN, SMALL } = c;
+          const tag = "03 · HOW WRONG", T = D.test, pred = D.seen[0].test;
+          const ui = layer();
+          const P = plot(ui, S.x, S.y, S.w, S.h, { xr: RANGE, yr: RANGE, xticks: TICKS, yticks: TICKS, xlabel: "measured log S", ylabel: "predicted log S" });
+          gsap.set(P.s, HIDDEN); appear(P.s, 0.3);
+          const diag = svg("line", { x1: P.px(RANGE[0]), y1: P.py(RANGE[0]), x2: P.px(RANGE[1]), y2: P.py(RANGE[1]), stroke: "#c8d0e0", "stroke-width": 2, "stroke-dasharray": "10 10", opacity: 0 }, P.g);
+
+          // ---------- the test set, before training ----------
+          caption(0.3, 9.4, { tag, title: "Predicted against measured", sub: `The ${T.y.length} test molecules. On the dashed line a prediction would be right; untrained, every one is near ${num(D.scaler.mean)}.` });
+          appear(diag, 1.0);
+          const dots = T.y.map((y, i) => { const d = svg("circle", { cx: P.px(y), cy: P.py(pred[i]), r: 7, fill: c.ACCENT, "fill-opacity": 0.8, opacity: 0 }, P.g); appear(d, 1.6 + i * 0.02, 0.3); return d; });
+
+          // ---------- the error ----------
+          caption(9.6, 21.6, { tag, title: "The loss: mean squared error", sub: "Each miss is the gap to the line, squared. Averaged over a batch, on z-scores, that one number is what training lowers." });
+          // the misses of a handful of molecules, drawn as their gaps
+          const some = T.y.map((y, i) => i).sort((a, b) => T.y[a] - T.y[b]).filter((_, k) => k % 19 === 3);
+          some.forEach((i, k) => { const t = 10.4 + k * 0.4, x = P.px(T.y[i]);
+            const gap = svg("line", { x1: x, y1: P.py(pred[i]), x2: x, y2: P.py(T.y[i]), stroke: RED, "stroke-width": 4, opacity: 0 }, P.g); appear(gap, t);
+            pulse(dots[i], t, 1.6); });
+          const first = D.loss.train[0];
+          const f = box(ui, `<div class="formula">loss = mean( (ẑ − z)² )</div>`, 1660, 520, HIDDEN), v = box(ui, `<div class="val">first epoch <b>${first.toFixed(2)}</b></div>`, 1660, 590, HIDDEN);
+          appear(f, 13.4); appear(v, 14.4);
+
+          c.fadeIn(); c.fadeOut();
+          window.__timelines["loss"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 05, fifty epochs: the loss on the training and validation sets, and the test set closing in on the line.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #epochs { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #epochs .key { font: 700 22px "JetBrains Mono", monospace; }
+        #epochs .epoch { font: 600 26px Inter; color: #8b95ab; }
+        #epochs .epoch b { font: 800 34px "JetBrains Mono", monospace; color: #eef1f7; margin-left: 8px; }
+      </style>
+
+      <div id="epochs" data-composition-id="epochs" data-width="1920" data-height="1080">
+        <div id="epochs-bg" class="layer bg"></div>
+        <div id="epochs-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, AMBER, chapter } = emaki, { num, RANGE, TICKS, SCATTER: S } = emaki.film; // kit.js, film.js
+          const c = chapter("epochs"), { layer, box, to, set, pop, pulse, appear, vanish, show, caption, plot, svg, HIDDEN, SMALL } = c;
+          const tag = "05 · FIFTY EPOCHS", T = D.test, E = D.epochs, L = D.loss, GREEN = "#a3e635";
+          const ui = layer();
+
+          // ---------- the losses ----------
+          caption(0.3, 9.6, { tag, title: `${E} passes over the training set`, sub: `After each epoch, the loss on the ${D.split.train} training molecules and on the ${D.split.val} it never trains on. Both fall; they part a little near the end.` });
+          const top = Math.ceil(Math.max(L.train[0], L.val[0]) * 10) / 10;
+          const P = plot(ui, 260, 330, 620, 480, { xr: [0, E], yr: [0, top], xticks: [0, 10, 20, 30, 40, 50].map((e) => [e, String(e)]), yticks: [[0, "0"], [top / 2, String(top / 2)], [top, String(top)]], xlabel: "epoch", ylabel: "loss (z²)" });
+          gsap.set(P.s, HIDDEN); appear(P.s, 0.4);
+          [[L.train, c.ACCENT, "train"], [L.val, GREEN, "validation"]].forEach(([ys, color, name], k) => {
+            const path = svg("path", { d: ys.map((v, i) => `${i ? "L" : "M"} ${P.px(i + 1).toFixed(1)} ${P.py(v).toFixed(1)}`).join(" "), fill: "none", stroke: color, "stroke-width": 4, pathLength: 1, "stroke-dasharray": "1 1.1", "stroke-dashoffset": 1.05 }, P.g);
+            to(path, 1.2, 8.0, { strokeDashoffset: 0 }, "power1.inOut");
+            const lbl = box(ui, `<div class="key" style="color:${color}">${name} ${ys.at(-1).toFixed(3)}</div>`, 880, 340 + k * 34, { xPercent: -100, autoAlpha: 0 }); appear(lbl, 8.0);
+          });
+
+          // ---------- the test set closes in ----------
+          caption(9.8, 29.6, { tag, title: "The test set closes in", sub: "The same 114 molecules after each epoch shown. Nothing about them was trained on; still, they move onto the line." });
+          const Q = plot(ui, 1140, S.y, S.w, S.h, { xr: RANGE, yr: RANGE, xticks: TICKS, yticks: TICKS, xlabel: "measured log S", ylabel: "predicted log S" });
+          gsap.set(Q.s, HIDDEN); appear(Q.s, 10.0);
+          svg("line", { x1: Q.px(RANGE[0]), y1: Q.py(RANGE[0]), x2: Q.px(RANGE[1]), y2: Q.py(RANGE[1]), stroke: "#c8d0e0", "stroke-width": 2, "stroke-dasharray": "10 10" }, Q.g);
+          const shown = Object.keys(D.seen).map(Number).sort((a, b) => a - b), at = (e) => 11.0 + (e / E) * 16.0;
+          const dots = T.y.map((y, i) => svg("circle", { cx: Q.px(y), cy: Q.py(D.seen[0].test[i]), r: 7, fill: c.ACCENT, "fill-opacity": 0.8 }, Q.g));
+          const counter = box(ui, `<div class="epoch">epoch <b>0</b></div>`, 1140 + S.w / 2, S.y - 34, HIDDEN), count = counter.querySelector("b"); appear(counter, 10.4);
+          // the marker on the loss chart moves with the epoch
+          const mark = svg("line", { x1: P.px(0), y1: P.py(top), x2: P.px(0), y2: P.py(0), stroke: AMBER, "stroke-width": 2, opacity: 0 }, P.g); appear(mark, 10.6);
+          shown.slice(1).forEach((e, k) => { const t0 = at(shown[k]), t1 = at(e);
+            dots.forEach((d, i) => to(d, t0, t1, { attr: { cy: Q.py(D.seen[e].test[i]) } }, "power1.inOut"));
+            set(count, t1, { textContent: e }); to(mark, t0, t1, { attr: { x1: P.px(e), x2: P.px(e) } }, "power1.inOut"); });
+
+          c.fadeIn(); c.fadeOut();
+          window.__timelines["epochs"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

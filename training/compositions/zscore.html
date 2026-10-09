@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 02, z-scores: the training targets less their mean, over their spread; why the untrained model says the mean.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #zscore { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #zscore .tagnote { font: 700 22px "JetBrains Mono", monospace; color: #ffb547; }
+        #zscore .z { font: 700 22px "JetBrains Mono", monospace; color: var(--accent); }
+        #zscore .formula { font: 600 32px "JetBrains Mono", monospace; color: #c8d0e0; }
+      </style>
+
+      <div id="zscore" data-composition-id="zscore" data-width="1920" data-height="1080">
+        <div id="zscore-bg" class="layer bg"></div>
+        <div id="zscore-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, AMBER, chapter } = emaki, { num } = emaki.film; // kit.js, film.js
+          const c = chapter("zscore"), { layer, box, to, set, pop, pulse, appear, vanish, show, caption, plot, svg, HIDDEN, SMALL } = c;
+          const tag = "02 · Z-SCORES", { mean: MU, std: SD } = D.scaler;
+          const ui = layer();
+
+          // ---------- the mean and the spread of the training targets ----------
+          caption(0.3, 9.4, { tag, title: "Centred and scaled", sub: `Chemprop trains on z = (log S − μ) / σ, with μ = ${num(MU)} and σ = ${num(SD)}, the mean and spread of the ${D.split.train} training targets.` });
+          const LO = -12, HI = 2, BIN = 0.5, bins = Array.from({ length: (HI - LO) / BIN }, () => 0);
+          D.train_y.forEach((y) => bins[Math.min(bins.length - 1, Math.floor((y - LO) / BIN))]++);
+          const top = Math.ceil(Math.max(...bins) / 20) * 20;
+          const P = plot(ui, 360, 330, 1200, 440, { xr: [LO, HI], yr: [0, top], xticks: [-12, -10, -8, -6, -4, -2, 0, 2].map((v) => [v, num(v, 0)]), yticks: [0, top / 2, top].map((v) => [v, String(v)]), xlabel: "log S", ylabel: "molecules" });
+          gsap.set(P.s, HIDDEN); appear(P.s, 0.3);
+          bins.forEach((count, b) => { if (!count) return; const x0 = P.px(LO + b * BIN), x1 = P.px(LO + (b + 1) * BIN), y = P.py(count);
+            svg("rect", { x: x0 + 2, y, width: x1 - x0 - 4, height: P.py(0) - y, fill: c.ACCENT, rx: 3, opacity: 0.85 }, P.g); });
+          const mu = svg("line", { x1: P.px(MU), y1: P.py(top), x2: P.px(MU), y2: P.py(0), stroke: AMBER, "stroke-width": 4, opacity: 0 }, P.g); appear(mu, 1.6);
+          const band = svg("rect", { x: P.px(MU - SD), y: P.py(top), width: P.px(MU + SD) - P.px(MU - SD), height: P.py(0) - P.py(top), fill: AMBER, opacity: 0 }, P.g); to(band, 2.4, 2.9, { autoAlpha: 0.12 });
+          const lmu = box(ui, `<div class="tagnote">μ ${num(MU)}</div>`, P.px(MU), 300, SMALL), lsd = box(ui, `<div class="tagnote">± σ ${num(SD)}</div>`, P.px(MU + SD) + 70, 360, SMALL); pop(lmu, 1.8); pop(lsd, 2.8);
+          // the same axis read as z
+          const zs = [-4, -2, 0, 2].map((z, k) => { const el = box(ui, `<div class="z">z ${num(z, 0)}</div>`, P.px(MU + z * SD), 850, HIDDEN); appear(el, 5.0 + k * 0.2); return el; });
+
+          // ---------- the untrained model says the mean ----------
+          caption(9.6, 19.6, { tag, title: "Why an untrained model says −3.06", sub: `The last film's model gave ŷ ≈ 0 for everything. Turned back into log S, 0 is the mean: ${num(D.seen[0].A)} for N-methylacetamide, ${num(D.seen[0].P)} for paracetamol.` });
+          const f = box(ui, `<div class="formula">log S = ŷ · σ + μ = 0 · ${num(SD)} + (${num(MU)})</div>`, 960, 960, HIDDEN); appear(f, 10.6);
+          pulse(lmu.firstChild, 12.0, 1.2);
+
+          c.fadeIn(); c.fadeOut();
+          window.__timelines["zscore"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

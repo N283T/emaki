@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 08, paracetamol: kept out of training, predicted after each epoch shown, against its measured solubility.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #drug { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #drug .pred { font: 600 26px Inter; color: #8b95ab; }
+        #drug .pred b { font: 800 36px "JetBrains Mono", monospace; color: #eef1f7; margin-left: 8px; }
+      </style>
+
+      <div id="drug" data-composition-id="drug" data-width="1920" data-height="1080">
+        <div id="drug-bg" class="layer bg"></div>
+        <div id="drug-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, AMBER, chapter } = emaki, { VIEW, num } = emaki.film; // kit.js, film.js
+          const c = chapter("drug"), { layer, box, to, set, pop, pulse, appear, vanish, show, caption, plot, svg, HIDDEN, SMALL } = c;
+          const tag = "08 · PARACETAMOL", K = D.esol.kept, E = D.epochs, shown = Object.keys(D.seen).map(Number).sort((a, b) => a - b);
+          const world = layer(), ui = layer(), m = c.mol(world, "P", VIEW.drug, { drawn: false });
+
+          // ---------- the molecule it never saw ----------
+          caption(0.3, 8.0, { tag, title: "The molecule kept out", sub: `Paracetamol was in none of the three sets. Measured: log S = ${num(K.y)}.` });
+          m.drawIn(0.5);
+          const lo = Math.floor(Math.min(...shown.map((e) => D.seen[e].P), K.y) - 0.5), hi = Math.ceil(Math.max(...shown.map((e) => D.seen[e].P), K.y) + 0.5);
+          const P = plot(ui, 1000, 340, 700, 440, { xr: [0, E], yr: [lo, hi], xticks: [0, 10, 20, 30, 40, 50].map((e) => [e, String(e)]), yticks: Array.from({ length: hi - lo + 1 }, (_, k) => [lo + k, num(lo + k, 0)]), xlabel: "epoch", ylabel: "log S" });
+          gsap.set(P.s, HIDDEN); appear(P.s, 3.4);
+          const truth = svg("line", { x1: P.px(0), y1: P.py(K.y), x2: P.px(E), y2: P.py(K.y), stroke: AMBER, "stroke-width": 3, "stroke-dasharray": "10 8", opacity: 0 }, P.g); appear(truth, 4.2);
+          const tl = box(ui, `<div class="note" style="color:#ffb547">measured ${num(K.y)}</div>`, P.px(0) + 12, P.py(K.y) - 24, { xPercent: 0, autoAlpha: 0 }); appear(tl, 4.4);
+
+          // ---------- epoch by epoch ----------
+          const final = D.seen[E].P;
+          caption(8.2, 23.6, { tag, title: `${num(D.seen[0].P)}, then ${num(final)}`, sub: `From the mean before training to within ${Math.abs(final - K.y).toFixed(2)} of the measurement after ${E} epochs, for a molecule the model never saw.` });
+          const path = svg("path", { d: shown.map((e, k) => `${k ? "L" : "M"} ${P.px(e).toFixed(1)} ${P.py(D.seen[e].P).toFixed(1)}`).join(" "), fill: "none", stroke: c.ACCENT, "stroke-width": 4, pathLength: 1, "stroke-dasharray": "1 1.1", "stroke-dashoffset": 1.05 }, P.g);
+          to(path, 9.0, 15.0, { strokeDashoffset: 0 }, "power1.inOut");
+          shown.forEach((e) => { const d = svg("circle", { cx: P.px(e), cy: P.py(D.seen[e].P), r: 8, fill: c.ACCENT, opacity: 0 }, P.g); appear(d, 9.0 + (e / E) * 6.0, 0.2); });
+          const end = box(ui, `<div class="pred">ŷ <b>${num(final)}</b></div>`, P.px(E) - 10, P.py(final) - 44, { ...SMALL, xPercent: -100 }); pop(end, 15.4);
+
+          c.fadeIn(); c.fadeOut();
+          window.__timelines["drug"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

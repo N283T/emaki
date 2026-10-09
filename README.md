@@ -28,8 +28,10 @@ from the molecule in to the prediction out.
 | [molgraph](molgraph/) | What a molecule becomes before Chemprop learns anything: 72 numbers per atom, 14 per bond, and every bond turned into two directed ones |
 | [messages](messages/) | Directed message passing: what each directed bond hears, why never its own reverse, and how far it hears in Chemprop's three steps |
 | [readout](readout/) | From a row per atom to one prediction: the rows added up and divided by 100, a learned fingerprint, and the feed-forward network |
+| [training](training/) | The same model trained on ESOL's measured solubilities: z-scores, the loss, 50 epochs, the test set, and paracetamol, kept out to the end |
 
-It starts from N-methylacetamide, the molecule of the fingerprint films, and ends on paracetamol.
+Every film starts from N-methylacetamide, the molecule of the fingerprint films, and ends on paracetamol. The last one
+finds paracetamol's solubility within 0.25 log units of its measured value, without having seen it.
 
 Each animation is a [HyperFrames](https://github.com/heygen-com/hyperframes) project: HTML, CSS and
 JavaScript that render to video, with no build step. It needs Node.js, and ffmpeg to render.
@@ -63,10 +65,12 @@ project stands on its own, and keep what differs in three more files:
 After changing the pacing of any of them, `node sync-clips.mjs` moves the clips in `index.html` to match.
 
 The Chemprop films are built the same way, and share a `kit.js` and a `style.css` of their own (identical copies in
-`molgraph`, `messages` and `readout`): they keep the fingerprint films' camera, molecule and captions, and add directed bonds,
+`molgraph`, `messages`, `readout` and `training`): they keep the fingerprint films' camera, molecule and captions, and add directed bonds,
 feature vectors drawn as rows of cells cut into blocks, and hidden vectors drawn as strips. Their `data.py` runs
 Chemprop 2.3.1 itself, so `uv run data.py` installs PyTorch the first time. The hidden vectors in `messages` and `readout` come
-from the weights a new model starts with (seed 0): real numbers, nothing learned yet.
+from the weights a new model starts with (seed 0): real numbers, nothing learned yet. `training` trains that same
+model on ESOL (Delaney, *J. Chem. Inf. Comput. Sci.* 2004), which its `data.py` downloads from MoleculeNet and checks
+against a SHA-256; the training takes a few minutes on a CPU and comes out the same every time.
 
 Every `npm run render` here passes `--no-experimental-fast-capture`: HyperFrames' fast capture left the wall
 of bits out of some stretches of two of the videos, which `snapshot` and `check` do not show.
