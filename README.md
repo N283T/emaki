@@ -22,6 +22,7 @@ ends on their Tanimoto similarity under its fingerprint: 0.41, 0.32, 0.00 and 0.
 
 | Animation | Algorithm |
 |---|---|
+| [dmpnn-pv](dmpnn-pv/) | A 72-second promo for D-MPNN in 3D (three.js): directed bonds, messages, the molecule's vector, a prediction, training. Illustrative, not computed |
 | [dmpnn](dmpnn/) | Chemprop's D-MPNN in one film: paracetamol through the whole model, the model training on ESOL, and paracetamol again |
 
 ### Chemprop, step by step
@@ -77,6 +78,10 @@ Chemprop 2.3.1 itself, so `uv run data.py` installs PyTorch the first time. The 
 from the weights a new model starts with (seed 0): real numbers, nothing learned yet. `training` trains that same
 model on ESOL (Delaney, *J. Chem. Inf. Comput. Sci.* 2004), which its `data.py` downloads from MoleculeNet and checks
 against a SHA-256; the training takes a few minutes on a CPU and comes out the same every time.
+
+`dmpnn-pv` stands apart: one `index.html` whose words are GSAP and whose pictures are one three.js scene in `scene.js`,
+drawn from HyperFrames time on every seek. Its `data.py` only embeds the 3D shapes of the molecules with RDKit; the
+model's numbers in it are made up for the look. It renders through WebGL, in software where there is no GPU.
 
 Every `npm run render` here passes `--no-experimental-fast-capture`: HyperFrames' fast capture left the wall
 of bits out of some stretches of two of the videos, which `snapshot` and `check` do not show.
