@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <title>Messages</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="data.js"></script>
+    <script src="kit.js"></script>
+    <script src="film.js"></script>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="195" data-width="1920" data-height="1080">
+      <!-- One clip per chapter, each a sub-composition. `node sync-clips.mjs` sets the starts and durations
+           from the chapter table in film.js. -->
+      <div id="el-intro" class="clip" data-composition-id="intro" data-composition-src="compositions/intro.html" data-start="0" data-duration="8" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-hidden" class="clip" data-composition-id="hidden" data-composition-src="compositions/hidden.html" data-start="8" data-duration="24" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-message" class="clip" data-composition-id="message" data-composition-src="compositions/message.html" data-start="32" data-duration="30" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-listen" class="clip" data-composition-id="listen" data-composition-src="compositions/listen.html" data-start="62" data-duration="24" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-update" class="clip" data-composition-id="update" data-composition-src="compositions/update.html" data-start="86" data-duration="24" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-depth" class="clip" data-composition-id="depth" data-composition-src="compositions/depth.html" data-start="110" data-duration="30" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-atoms" class="clip" data-composition-id="atoms" data-composition-src="compositions/atoms.html" data-start="140" data-duration="26" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-drug" class="clip" data-composition-id="drug" data-composition-src="compositions/drug.html" data-start="166" data-duration="22" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-outro" class="clip" data-composition-id="outro" data-composition-src="compositions/outro.html" data-start="188" data-duration="7" data-track-index="1" data-width="1920" data-height="1080"></div>
+    </div>
+    <script>
+      // every chapter animates itself; the film's own timeline has nothing to do
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

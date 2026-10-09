@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 01, the hidden vectors: W_i makes 300 numbers per directed bond, ReLU keeps the positive ones,
+         and the weights are a new model's.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #hidden { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #hidden .legend { display: flex; gap: 36px; font: 600 22px Inter; color: #8b95ab; }
+        #hidden .legend span { display: flex; align-items: center; gap: 10px; }
+        #hidden .legend i { width: 26px; height: 20px; border-radius: 3px; }
+      </style>
+
+      <div id="hidden" data-composition-id="hidden" data-width="1920" data-height="1080">
+        <div id="hidden-bg" class="layer bg"></div>
+        <div id="hidden-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, BLUE, arrowText, chapter } = emaki, { VIEW, MAX } = emaki.film; // kit.js, film.js
+          const c = chapter("hidden"), { layer, box, to, set, pop, pulse, appear, vanish, show, caption, HIDDEN, SMALL } = c;
+          const tag = "01 · A HIDDEN VECTOR PER DIRECTED BOND", G = D.graphs.A, { in: DIN, h: DH } = D.dims;
+          const world = layer(), ui = layer(), m = c.mol(world, "A", VIEW.left);
+          G.edges.forEach((_, k) => m.direct(k));
+
+          // ---------- 300 numbers per directed bond ----------
+          caption(0.3, 8.4, { tag, title: `${DH} numbers per directed bond`, sub: `W_i turns each directed bond's ${DIN} inputs into ${DH} numbers: one row per directed bond.` });
+          const TOP = 360, H = c.strips(ui, 1320, TOP, G.pre.map((values, k) => ({ values, label: `<span class="ix">${k}</span>${arrowText("A", k)}` })), { max: MAX, h: 30, rowgap: 12 });
+          H.rows.forEach((r, k) => { gsap.set(r.lbl, HIDDEN); const t = 1.2 + k * 0.6; m.hot(k, t, "#ffb547", t + 0.6); appear(r.lbl, t); r.wipe(t); });
+          const legend = box(ui, `<div class="legend"><span><i style="background:${c.ACCENT}"></i>positive</span><span><i style="background:${BLUE}"></i>negative</span><span><i style="background:#141c33;border:1px solid #2b3960"></i>0</span></div>`, 1320, TOP + H.H + 56, HIDDEN);
+          appear(legend, 6.4);
+
+          // ---------- ReLU ----------
+          const flat = G.pre.flat(), zeros = flat.filter((x) => x <= 0).length;
+          caption(8.6, 15.6, { tag, title: "ReLU keeps the positive ones", sub: `Every negative number becomes 0 — here ${zeros} of ${flat.length}. What is left is H⁰, where message passing begins.` });
+          H.rows.forEach((r, k) => r.relu(10.0 + k * 0.12));
+          const name = box(ui, `<div class="shape">H⁰ <small>${G.pre.length} × ${DH}</small></div>`, 1320, TOP + H.H + 56, SMALL);
+          vanish(legend, 12.0); pop(name, 12.2);
+
+          // ---------- not trained yet ----------
+          caption(15.8, 23.6, { tag, title: "Nothing is learned yet", sub: `These are the weights a new model starts with (seed ${D.seed}). The numbers are real; what they mean comes with training.` });
+          H.rows.forEach((r, k) => pulse(r.lbl.firstChild, 16.8 + k * 0.1, 1.12));
+
+          c.fadeOut();
+          window.__timelines["hidden"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 05, depth: two rounds of messages, how far NH→CH₃ hears after each, and an end that hears nothing new.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #depth { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #depth .stepbox { position: relative; padding: 14px 30px; border-radius: 16px; border: 2px solid #3a4a74; background: rgba(15,22,40,.96); font: 800 40px "JetBrains Mono", monospace; color: #eef1f7; }
+        #depth .stepbox small { display: block; font: 500 18px Inter; color: #8b95ab; margin-top: 4px; text-align: center; }
+        #depth .glow { position: absolute; inset: -2px; border-radius: 16px; border: 3px solid var(--accent); box-shadow: 0 0 26px var(--accent); }
+      </style>
+
+      <div id="depth" data-composition-id="depth" data-width="1920" data-height="1080">
+        <div id="depth-bg" class="layer bg"></div>
+        <div id="depth-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, AMBER, RED, GREEN, arrowText, chapter } = emaki, { VIEW, REACH } = emaki.film; // kit.js, film.js
+          const c = chapter("depth"), { layer, box, to, set, pop, pulse, appear, vanish, show, caption, HIDDEN, SMALL } = c;
+          const tag = "05 · THREE DEEP", G = D.graphs.A, M = D.mols.A, K = G.edges.length, DEPTH = D.dims.depth;
+          const world = layer(), ui = layer(), m = c.mol(world, "A", VIEW.high);
+          G.edges.forEach((_, k) => m.direct(k));
+
+          // ---------- the rounds ----------
+          caption(0.3, 9.0, { tag, title: `Depth ${DEPTH}: ${DEPTH - 1} rounds`, sub: `Chemprop's default depth of ${DEPTH} counts H⁰ and ${DEPTH - 1} rounds of messages: H¹ and H².` });
+          const SUP = ["⁰", "¹", "²", "³", "⁴", "⁵"], Y = 860, X = (t) => 960 + (t - (DEPTH - 1) / 2) * 300;
+          const steps = Array.from({ length: DEPTH }, (_, t) => {
+            const el = box(ui, `<div class="stepbox">H${SUP[t]}<small>${t ? `round ${t}` : "start"}</small><i class="glow"></i></div>`, X(t), Y, SMALL);
+            gsap.set(el.querySelector(".glow"), HIDDEN); pop(el, 1.0 + t * 0.3);
+            if (t) appear(box(ui, `<div class="op">→</div>`, (X(t - 1) + X(t)) / 2, Y, HIDDEN), 1.2 + t * 0.3);
+            return el;
+          });
+          const lit = (t, t0, t1) => { const g = steps[t].querySelector(".glow"); appear(g, t0, 0.3); if (t1 != null) vanish(g, t1, 0.3); };
+          // each round, every directed bond hears at once
+          lit(0, 2.2, 3.8);
+          for (let t = 1; t < DEPTH; t++) { const t0 = 2.2 + t * 2.2; lit(t, t0, t0 + 1.8); G.edges.forEach((_, k) => m.hot(k, t0 + 0.1, AMBER, t0 + 1.4)); }
+
+          // ---------- how far one directed bond hears ----------
+          const R = G.reach.bonds[REACH], [, to_] = G.edges[REACH];
+          caption(9.2, 21.0, { tag, title: "How far a directed bond hears", sub: `${arrowText("A", REACH)} knows only ${M.atoms[R[0][0]].text} in H⁰, C after one round, and the far side of C after two.` });
+          m.hot(REACH, 9.6, AMBER, 20.8);
+          R.forEach((atoms, t) => {
+            const t0 = 10.6 + t * 3.0, fresh = atoms.filter((n) => !(t && R[t - 1].includes(n)));
+            lit(t, t0, t0 + 2.8);
+            fresh.forEach((n, i) => { m.mark(n, t0 + i * 0.2, 20.8, GREEN);
+              const a = M.atoms[n], b = m.badge(a.x + 48, a.y - 48, t, GREEN); pop(b, t0 + 0.2 + i * 0.2); vanish(b, 20.8); });
+          });
+
+          // ---------- an end hears nothing new ----------
+          const END = G.feeds.findIndex((f) => !f.length);
+          caption(21.2, 29.6, { tag, title: "An end hears nothing new", sub: `${arrowText("A", END)} never gets a message: after ${DEPTH - 1} rounds it still knows only its ${M.atoms[G.edges[END][0]].text}.` });
+          m.hot(END, 21.8, RED); m.ring(G.edges[END][0], 22.2, 29.4, RED);
+          for (let t = 0; t < DEPTH; t++) lit(t, 22.6 + t * 1.6, 23.9 + t * 1.6);
+
+          c.fadeIn(); c.fadeOut();
+          window.__timelines["depth"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

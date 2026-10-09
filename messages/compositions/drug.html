@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 07, a real drug: paracetamol's 22 directed bonds, how far its methyl hears, and how far every atom does.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #drug { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #drug .count { font: 800 26px "JetBrains Mono", monospace; color: #0b0f1a; background: var(--accent); border-radius: 12px; padding: 2px 10px; }
+      </style>
+
+      <div id="drug" data-composition-id="drug" data-width="1920" data-height="1080">
+        <div id="drug-bg" class="layer bg"></div>
+        <div id="drug-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, AMBER, GREEN, RED, chapter } = emaki, { VIEW } = emaki.film; // kit.js, film.js
+          const c = chapter("drug"), { layer, box, to, set, pop, pulse, appear, vanish, show, caption, HIDDEN, SMALL } = c;
+          const tag = "07 · A REAL DRUG", G = D.graphs.P, M = D.mols.P, K = G.edges.length, n = M.atoms.length, DEPTH = D.dims.depth;
+          const world = layer(), ui = layer(), m = c.mol(world, "P", VIEW.drug, { drawn: false });
+
+          // ---------- paracetamol ----------
+          caption(0.3, 7.0, { tag, title: M.name, sub: `${K} directed bonds, ${DEPTH - 1} rounds of messages.` });
+          m.drawIn(0.5);
+          G.edges.forEach((_, k) => m.direct(k, 3.4 + k * 0.08));
+
+          // ---------- how far the methyl hears ----------
+          const reach = G.reach.atoms, ME = 0, OH = M.atoms.findIndex((a) => a.text === "OH");
+          caption(7.2, 14.6, { tag, title: `${DEPTH} bonds of reach`, sub: `After ${DEPTH - 1} rounds, the methyl carbon has heard from ${reach[ME].length} of ${n} atoms.${reach[ME].includes(OH) ? "" : " The OH is too far."}` });
+          m.ring(ME, 7.8, 14.4, AMBER);
+          reach[ME].filter((a) => a !== ME).forEach((a, i) => m.mark(a, 8.6 + i * 0.3, 14.4, GREEN));
+          if (!reach[ME].includes(OH)) m.ring(OH, 11.0, 14.4, RED);
+
+          // ---------- every atom ----------
+          const sizes = reach.map((r) => r.length), lo = Math.min(...sizes), hi = Math.max(...sizes);
+          caption(14.8, 21.6, { tag, title: "Every atom, its own neighbourhood", sub: `From ${lo} to ${hi} of ${n} atoms${hi < n ? ": none hears the whole molecule" : ""}. Depth sets how far Chemprop looks.` });
+          reach.forEach((r, a) => { const tagEl = m.tag(a, `<div class="count">${r.length}</div>`, SMALL); pop(tagEl, 15.6 + a * 0.12); });
+
+          c.fadeIn(); c.fadeOut();
+          window.__timelines["drug"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

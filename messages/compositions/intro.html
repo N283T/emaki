@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Title card over a graph whose joins carry dots both ways, then N-methylacetamide with its eight directed bonds.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #intro { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+      </style>
+
+      <div id="intro" data-composition-id="intro" data-width="1920" data-height="1080">
+        <div id="intro-bg" class="layer bg"></div>
+        <div id="intro-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, rnd, chapter } = emaki, { VIEW } = emaki.film; // kit.js, film.js
+          const c = chapter("intro"), { svg, canvas, layer, to, set, vanish, caption } = c;
+
+          // ---------- the title, over points whose joins carry a dot each way ----------
+          const sky = canvas(), N = 15;
+          const pts = Array.from({ length: N }, (_, n) => { const a = (n / N) * Math.PI * 2 + rnd(n) * 0.5, r = 0.7 + rnd(n + 40) * 0.38;
+            return [960 + Math.cos(a) * 800 * r, 540 + Math.sin(a) * 410 * r]; });
+          const near = (i) => pts.map((p, j) => [Math.hypot(p[0] - pts[i][0], p[1] - pts[i][1]), j]).sort((a, b) => a[0] - b[0]).slice(1, 3).map(([, j]) => j);
+          const joins = new Set(); pts.forEach((_, i) => near(i).forEach((j) => joins.add(i < j ? `${i}-${j}` : `${j}-${i}`)));
+          [...joins].forEach((key, k) => {
+            const [i, j] = key.split("-").map(Number), [x1, y1] = pts[i], [x2, y2] = pts[j], L = Math.hypot(x2 - x1, y2 - y1);
+            const nx = (-(y2 - y1) / L) * 7, ny = ((x2 - x1) / L) * 7, t = 0.2 + rnd(k + 9) * 1.2;
+            [[x1 + nx, y1 + ny, x2 + nx, y2 + ny], [x2 - nx, y2 - ny, x1 - nx, y1 - ny]].forEach(([a, b, cx, cy], d) => {
+              const line = svg("line", { x1: a, y1: b, x2: cx, y2: cy, stroke: c.ACCENT, "stroke-width": 2, "stroke-opacity": 0.3, pathLength: 1, "stroke-dasharray": "1 1.1", "stroke-dashoffset": 1.05 }, sky);
+              to(line, t + d * 0.25, t + d * 0.25 + 0.8, { strokeDashoffset: 0 }, "power2.inOut");
+              // a dot runs along the stroke, twice
+              const dot = svg("circle", { cx: a, cy: b, r: 5, fill: c.ACCENT, opacity: 0 }, sky), t0 = t + 0.9 + d * 0.4;
+              set(dot, t0, { autoAlpha: 1 }); to(dot, t0, t0 + 1.1, { attr: { cx, cy } }, "power1.inOut"); set(dot, t0 + 1.1, { attr: { cx: a, cy: b } });
+              to(dot, t0 + 1.1, t0 + 2.2, { attr: { cx, cy } }, "power1.inOut"); set(dot, t0 + 2.2, { autoAlpha: 0 });
+            });
+          });
+          pts.forEach(([cx, cy], n) => { const dot = svg("circle", { cx, cy, r: 8, fill: c.ACCENT, opacity: 0 }, sky); to(dot, 0.05 + n * 0.03, 0.4 + n * 0.03, { autoAlpha: 0.9 }); });
+          vanish(sky, 3.4, 0.5);
+          caption(0.1, 3.2, { hero: true, tag: "CHEMPROP · 2", title: "Messages", sub: "How directed bonds pass on what they know" });
+
+          // ---------- the molecule, as the first film left it ----------
+          const m = c.mol(layer(), "A", VIEW.wide, { drawn: false }), K = D.graphs.A.edges.length;
+          m.drawIn(3.6);
+          D.graphs.A.edges.forEach((_, k) => m.direct(k, 5.0 + k * 0.15));
+          caption(3.6, 7.8, { title: D.mols.A.name, sub: `As the first film left it: ${D.mols.A.bonds.length} bonds, ${K} directed bonds.` });
+
+          window.__timelines["intro"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

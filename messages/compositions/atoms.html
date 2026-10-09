@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 06, back to atoms: each atom adds up what arrives in H², W_o joins it to the atom's own features,
+         and the two methyls, alike in V, come out different.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #atoms { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #atoms .formula { font: 600 32px "JetBrains Mono", monospace; color: #c8d0e0; }
+        #atoms .band { border-radius: 10px; border: 3px solid #ffb547; box-shadow: 0 0 16px rgba(255,181,71,.45); }
+        #atoms .diff { font: 600 26px Inter; color: #8b95ab; }
+        #atoms .diff b { color: #ffb547; font-weight: 800; }
+      </style>
+
+      <div id="atoms" data-composition-id="atoms" data-width="1920" data-height="1080">
+        <div id="atoms-bg" class="layer bg"></div>
+        <div id="atoms-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, INK, AMBER, arrowText, chapter } = emaki, { VIEW, C, MAX } = emaki.film; // kit.js, film.js
+          const c = chapter("atoms"), { layer, box, to, set, pop, pulse, appear, vanish, show, caption, HIDDEN, SMALL } = c;
+          const tag = "06 · BACK TO ATOMS", G = D.graphs.A, M = D.mols.A, { v: DV, h: DH } = D.dims;
+          const world = layer(), ui = layer(), m = c.mol(world, "A", VIEW.corner);
+          G.edges.forEach((_, k) => m.direct(k));
+          const X = 760, last = G.H.length - 1, SUP = ["⁰", "¹", "²", "³", "⁴"][last];
+
+          // ---------- an atom adds up what arrives ----------
+          const arrive = G.edges.map((e, k) => k).filter((k) => G.edges[k][1] === C);
+          caption(0.3, 9.0, { tag, title: "Each atom gathers what arrives", sub: `An atom adds up the H${SUP} rows of the directed bonds that point at it: for C, ${arrive.length} of them.` });
+          m.ring(C, 0.8, 8.8, AMBER);
+          const rows = c.strips(ui, X, 380, arrive.map((k) => ({ values: G.H[last][k], label: `<span class="ix">${k}</span>${arrowText("A", k)}` })), { cw: 3, h: 30, rowgap: 16, max: MAX });
+          rows.rows.forEach((r, n) => { const t = 1.4 + n * 0.6; m.hot(arrive[n], t, AMBER, 8.8); gsap.set(r.lbl, HIDDEN); appear(r.lbl, t); r.wipe(t); });
+          const sumY = 380 + rows.H + 40, rule = box(ui, `<div style="width:900px;height:2px;background:#46557c"></div>`, X, sumY - 20, HIDDEN);
+          const sum = c.heat(ui, X, sumY, G.gather[C], { cw: 3, h: 34, max: MAX });
+          const sumLbl = box(ui, `<div class="rowlbl">= m<sub>C</sub></div>`, X - 468, sumY + 17, { xPercent: -100, autoAlpha: 0 });
+          appear(rule, 3.8); appear(sumLbl, 4.2); sum.wipe(4.2, 0.9);
+          [...rows.rows.flatMap((r) => [r.el, r.lbl]), rule, sum.el, sumLbl].forEach((el) => vanish(el, 9.2));
+
+          // ---------- and meets its own features ----------
+          caption(9.4, 17.0, { tag, title: "…and meets its own features", sub: `W_o turns [x_v ‖ m_v], ${DV} + ${DH} numbers, into the atom's ${DH}, through ReLU once more.` });
+          const parts = [[`<div class="box" style="border-color:#3a4a74;box-shadow:none">[x<sub>C</sub> ‖ m<sub>C</sub>]<small>${DV} + ${DH} = ${DV + DH}</small></div>`, 300],
+            [`<div class="op">→</div>`, 520], [`<div class="box">W<sub>o</sub><small>learned</small></div>`, 680], [`<div class="op">→</div>`, 840]]
+            .map(([html, x], n) => { const el = box(ui, html, x, 470, SMALL); pop(el, 10.0 + n * 0.4); return el; });
+          const atomRow = c.heat(ui, 1050, 455, G.out[C], { cw: 1, h: 30, max: MAX });
+          const atomLbl = box(ui, `<div class="note">h<sub>C</sub> · ${DH}</div>`, 1050, 520, HIDDEN); atomRow.wipe(11.8); appear(atomLbl, 12.0);
+          const formula = box(ui, `<div class="formula">h<sub>v</sub> = ReLU( W<sub>o</sub>[x<sub>v</sub> ‖ m<sub>v</sub>] )</div>`, 680, 640, HIDDEN); appear(formula, 12.8);
+          [...parts, atomRow.el, atomLbl, formula].forEach((el) => vanish(el, 17.2));
+
+          // ---------- the methyls are told apart ----------
+          const methyls = M.atoms.map((a, n) => n).filter((n) => M.atoms[n].text === "CH₃"), [p, q] = methyls;
+          const differ = G.out[p].filter((x, i) => x !== G.out[q][i]).length;
+          caption(17.4, 25.6, { tag, title: "The methyls are told apart", sub: "Their rows of V were the same. After message passing, each carries what lies around it." });
+          const label = (n) => `<span class="ix">${n}</span><span style="color:${INK[M.atoms[n].el]}">${M.atoms[n].text}</span>`;
+          const out = c.strips(ui, X, 380, G.out.map((values, n) => ({ values, label: label(n) })), { cw: 3, h: 34, rowgap: 14, max: MAX });
+          out.rows.forEach((r, n) => { gsap.set(r.lbl, HIDDEN); appear(r.lbl, 18.0 + n * 0.2); r.wipe(18.0 + n * 0.2); });
+          const name = box(ui, `<div class="shape">${G.out.length} × ${DH} <small>one row per atom</small></div>`, X, 380 + out.H + 50, SMALL); pop(name, 19.4);
+          out.rows.forEach((r, n) => { if (!methyls.includes(n)) to([r.el, r.lbl], 20.6, 21.1, { autoAlpha: 0.25 }); });
+          methyls.forEach((n, i) => { const f = box(ui, `<div class="band" style="width:${900 + 20}px;height:${34 + 14}px"></div>`, X, 380 + n * out.step + 17, SMALL); pop(f, 21.0 + i * 0.3); m.ring(n, 21.0 + i * 0.3, 25.4, AMBER); });
+          const diff = box(ui, `<div class="diff"><b>${differ}</b> of ${DH} numbers differ</div>`, X, 380 + out.H + 104, HIDDEN); appear(diff, 22.0);
+
+          c.fadeIn(); c.fadeOut();
+          window.__timelines["atoms"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

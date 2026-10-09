@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 02, one message: what arrives where C→NH starts, less its own reverse, added up.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #message { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #message .strike { width: 920px; height: 4px; border-radius: 2px; background: #ff5d5d; box-shadow: 0 0 12px #ff5d5d; }
+        #message .x { font: 900 54px Inter; color: #ff5d5d; text-shadow: 0 0 18px rgba(255,93,93,.7); }
+      </style>
+
+      <div id="message" data-composition-id="message" data-width="1920" data-height="1080">
+        <div id="message-bg" class="layer bg"></div>
+        <div id="message-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, AMBER, RED, arrowText, chapter } = emaki, { VIEW, C, FOCUS, MAX } = emaki.film; // kit.js, film.js
+          const c = chapter("message"), { layer, box, to, set, pop, pulse, appear, vanish, show, caption, HIDDEN, SMALL } = c;
+          const tag = "02 · A MESSAGE", G = D.graphs.A, K = G.edges.length, WHITE = "#eef1f7";
+          const world = layer(), ui = layer(), m = c.mol(world, "A", VIEW.high);
+          G.edges.forEach((_, k) => m.direct(k));
+          const REV = G.rev[FOCUS], arrive = G.edges.map((e, k) => k).filter((k) => G.edges[k][1] === C), heard = G.feeds[FOCUS];
+
+          // ---------- what arrives at C ----------
+          caption(0.3, 9.6, { tag, title: "A message gathers what arrives", sub: `${arrowText("A", FOCUS)} starts at C. Its message adds up the directed bonds that arrive at C.` });
+          m.hot(FOCUS, 1.0, AMBER); m.ring(C, 1.6, 9.4, AMBER);
+          G.edges.forEach((_, k) => { if (k !== FOCUS && !arrive.includes(k)) to(m.arrows[k].g, 2.2, 2.7, { autoAlpha: 0.22 }); });
+          arrive.forEach((k, n) => m.hot(k, 3.0 + n * 0.5, WHITE, 9.6));
+
+          // ---------- except its own reverse ----------
+          caption(9.8, 18.4, { tag, title: "…except its own reverse", sub: `${arrowText("A", REV)} arrives at C too, but it comes from where ${arrowText("A", FOCUS)} is going. Leaving it out keeps a message from echoing straight back.` });
+          m.hot(REV, 10.4, RED); heard.forEach((k) => m.hot(k, 10.4, WHITE));
+          const [bx, by] = m.screen(...m.beside(REV, 84)), x = box(ui, `<div class="x">×</div>`, bx, by, SMALL); pop(x, 10.8);
+          // the rows of H⁰ that arrive at C, the reverse's struck out
+          const Y = 680, rows = c.strips(ui, 1010, Y, arrive.map((k) => ({ values: G.H[0][k], label: `<span class="ix">${k}</span>${arrowText("A", k)}` })), { cw: 3, h: 30, rowgap: 16, max: MAX });
+          rows.rows.forEach((r, n) => { gsap.set(r.lbl, HIDDEN); appear(r.lbl, 12.0 + n * 0.4); r.wipe(12.0 + n * 0.4); });
+          const out = rows.rows[arrive.indexOf(REV)];
+          to([out.el, out.lbl], 14.4, 14.9, { autoAlpha: 0.22 });
+          const strike = box(ui, `<div class="strike"></div>`, 1010, Y + arrive.indexOf(REV) * rows.step + 15, { scaleX: 0, autoAlpha: 1 }); to(strike, 14.2, 14.7, { scaleX: 1 });
+
+          // ---------- two rows, added ----------
+          caption(18.6, 29.6, { tag, title: "Two rows, added", sub: `m = ${heard.map((k) => `h(${arrowText("A", k)})`).join(" + ")}, number by number. Chemprop gets it as all that arrives at C, minus ${arrowText("A", REV)}.` });
+          const sum = c.heat(ui, 1010, Y + rows.H + 40, G.M[1][FOCUS], { cw: 3, h: 34, max: MAX });
+          const sumLbl = box(ui, `<div class="rowlbl">= m <span class="to">for</span>${arrowText("A", FOCUS)}</div>`, 1010 - sum.W / 2 - 18, Y + rows.H + 57, { xPercent: -100, autoAlpha: 0 });
+          const rule = box(ui, `<div style="width:${sum.W}px;height:2px;background:#46557c"></div>`, 1010, Y + rows.H + 20, { autoAlpha: 0 });
+          appear(rule, 19.4); appear(sumLbl, 19.8); sum.wipe(20.0, 1.0);
+          rows.rows.filter((r) => r !== out).forEach((r, n) => pulse(r.lbl.firstChild, 21.6 + n * 0.3, 1.12)); pulse(sumLbl.firstChild, 22.6, 1.12);
+
+          c.fadeIn(); c.fadeOut();
+          window.__timelines["message"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

@@ -26,6 +26,7 @@ from the molecule in to the prediction out.
 | Animation | Algorithm |
 |---|---|
 | [molgraph](molgraph/) | What a molecule becomes before Chemprop learns anything: 72 numbers per atom, 14 per bond, and every bond turned into two directed ones |
+| [messages](messages/) | Directed message passing: what each directed bond hears, why never its own reverse, and how far it hears in Chemprop's three steps |
 
 It starts from N-methylacetamide, the molecule of the fingerprint films, and ends on paracetamol.
 
@@ -60,9 +61,11 @@ project stands on its own, and keep what differs in three more files:
 
 After changing the pacing of any of them, `node sync-clips.mjs` moves the clips in `index.html` to match.
 
-`molgraph` is built the same way, with a `kit.js` and `style.css` of its own for the Chemprop films: they keep the
-fingerprint films' camera, molecule and captions, and add directed bonds and feature vectors drawn as rows of cells
-cut into blocks. Its `data.py` runs Chemprop 2.3.1 itself, so `uv run data.py` installs PyTorch the first time.
+The Chemprop films are built the same way, and share a `kit.js` and a `style.css` of their own (identical copies in
+`molgraph` and `messages`): they keep the fingerprint films' camera, molecule and captions, and add directed bonds,
+feature vectors drawn as rows of cells cut into blocks, and hidden vectors drawn as strips. Their `data.py` runs
+Chemprop 2.3.1 itself, so `uv run data.py` installs PyTorch the first time. The hidden vectors in `messages` come from
+the weights a new model starts with (seed 0): real numbers, nothing learned yet.
 
 Every `npm run render` here passes `--no-experimental-fast-capture`: HyperFrames' fast capture left the wall
 of bits out of some stretches of two of the videos, which `snapshot` and `check` do not show.

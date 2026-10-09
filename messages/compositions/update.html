@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 04, an update: h¹ = ReLU(W_i[x_u ‖ e_uv] + W_h m¹), with one W_h for every directed bond, and
+         no change where the message is empty.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #update { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #update .formula { font: 600 34px "JetBrains Mono", monospace; color: #c8d0e0; }
+        #update .band { border-radius: 10px; border: 3px solid #ffb547; box-shadow: 0 0 16px rgba(255,181,71,.45); }
+      </style>
+
+      <div id="update" data-composition-id="update" data-width="1920" data-height="1080">
+        <div id="update-bg" class="layer bg"></div>
+        <div id="update-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, AMBER, arrowText, chapter } = emaki, { VIEW, FOCUS, MAX } = emaki.film; // kit.js, film.js
+          const c = chapter("update"), { layer, box, to, set, pop, pulse, appear, vanish, show, caption, HIDDEN, SMALL } = c;
+          const tag = "04 · AN UPDATE", G = D.graphs.A, K = G.edges.length, DH = D.dims.h;
+          const world = layer(), ui = layer(), m = c.mol(world, "A", VIEW.corner);
+          G.edges.forEach((_, k) => m.direct(k));
+
+          // ---------- one update, number by number ----------
+          caption(0.3, 8.6, { tag, title: "An update", sub: `${arrowText("A", FOCUS)} adds W_h times its message to where it started, W_i[x_u ‖ e_uv], then applies ReLU.` });
+          m.hot(FOCUS, 0.8, AMBER, 8.6);
+          const X = 760, lines = [[G.pre[FOCUS], "W<sub>i</sub>[x<sub>u</sub> ‖ e<sub>uv</sub>]", 1.4], [G.WM[1][FOCUS], "+ W<sub>h</sub> m¹", 2.8], [G.Z[1][FOCUS], "=", 4.4], [G.H[1][FOCUS], "ReLU → h¹", 6.0]];
+          const rows = lines.map(([values, label, t], n) => {
+            const y = 380 + n * 86 + (n > 1 ? 24 : 0), st = c.heat(ui, X, y, values, { cw: 3, h: 34, max: MAX });
+            const lbl = box(ui, `<div class="rowlbl">${label}</div>`, X - st.W / 2 - 22, y + 17, { xPercent: -100, autoAlpha: 0 });
+            appear(lbl, t); st.wipe(t, 0.8); return [st, lbl];
+          });
+          const rule = box(ui, `<div style="width:900px;height:2px;background:#46557c"></div>`, X, 380 + 86 * 2 + 4, HIDDEN); appear(rule, 4.2);
+          const formula = box(ui, `<div class="formula">h¹ = ReLU( W<sub>i</sub>[x<sub>u</sub> ‖ e<sub>uv</sub>] + W<sub>h</sub> m¹ )</div>`, X, 860, HIDDEN); appear(formula, 7.0);
+          rows.forEach(([st, lbl]) => vanish([st.el, lbl], 8.8)); [rule, formula].forEach((el) => vanish(el, 8.8));
+
+          // ---------- the same W_h for every directed bond ----------
+          caption(9.0, 15.8, { tag, title: "The same W_h everywhere", sub: `One learned ${DH} × ${DH} matrix updates all ${K} directed bonds, in every round.` });
+          const label = (k) => `<span class="ix">${k}</span>${arrowText("A", k)}`;
+          const OPT = { cw: 1, h: 24, rowgap: 9, max: MAX, size: 19 };
+          const H0 = c.strips(ui, 470, 400, G.H[0].map((values, k) => ({ values, label: label(k) })), OPT);
+          const H1 = c.strips(ui, 1050, 400, G.H[1].map((values) => ({ values, label: "" })), OPT);
+          [H0, H1].forEach((S, n) => S.rows.forEach((r) => { gsap.set([r.el, r.lbl], HIDDEN); if (!n) appear([r.el, r.lbl], 9.6); }));
+          const heads = [["H⁰", 470], ["H¹", 1050]].map(([t, x]) => box(ui, `<div class="shape">${t}</div>`, x, 360, HIDDEN)); appear(heads[0], 9.6); appear(heads[1], 10.4);
+          const wh = box(ui, `<div class="box">W<sub>h</sub><small>${DH} × ${DH}</small></div>`, 760, 400 + H0.H / 2, SMALL); pop(wh, 10.2);
+          G.edges.forEach((_, k) => { const t = 11.0 + k * 0.55, r = H1.rows[k]; m.hot(k, t, AMBER, t + 0.5); appear(r.el, t, 0.01); r.wipe(t, 0.5); pulse(wh.firstChild, t, 1.06); });
+
+          // ---------- no message, no change ----------
+          const empty = G.feeds.map((f, k) => k).filter((k) => !G.feeds[k].length);
+          caption(16.0, 23.6, { tag, title: "No message, no change", sub: "With a message of zeros, h¹ = ReLU(W_i[x_u ‖ e_uv]) = h⁰: the bonds that leave an end keep their row." });
+          [H0, H1].forEach((S) => S.rows.forEach((r, k) => { if (!empty.includes(k)) to([r.el, r.lbl], 16.6, 17.1, { autoAlpha: 0.25 }); }));
+          empty.forEach((k, n) => {
+            const t = 17.4 + n * 0.5, y = 400 + k * H0.step + 12;
+            [470, 1050].forEach((x) => { const f = box(ui, `<div class="band" style="width:${300 + 20}px;height:${24 + 14}px"></div>`, x, y, SMALL); pop(f, t); });
+            m.hot(k, t, AMBER);
+          });
+
+          c.fadeIn(); c.fadeOut();
+          window.__timelines["update"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>
