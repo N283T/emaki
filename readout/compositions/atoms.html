@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 01, a row per atom: message passing leaves 300 numbers on every atom, and a property belongs to the molecule.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #atoms { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+      </style>
+
+      <div id="atoms" data-composition-id="atoms" data-width="1920" data-height="1080">
+        <div id="atoms-bg" class="layer bg"></div>
+        <div id="atoms-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, AMBER, chapter } = emaki, { VIEW, MAX, atomLabel } = emaki.film; // kit.js, film.js
+          const c = chapter("atoms"), { layer, box, to, set, pop, pulse, appear, vanish, show, caption, HIDDEN, SMALL } = c;
+          const tag = "01 · A ROW PER ATOM", G = D.graphs.A, M = D.mols.A, DH = D.dims.h;
+          const world = layer(), ui = layer(), m = c.mol(world, "A", VIEW.wide);
+
+          // ---------- five atoms, five rows ----------
+          caption(0.3, 9.0, { tag, title: `${M.atoms.length} atoms, ${M.atoms.length} rows`, sub: `Message passing leaves a row of ${DH} numbers on every atom.` });
+          m.move(0.4, 1.6, VIEW.left);
+          const rows = c.strips(ui, 1330, 380, G.atoms.map((values, n) => ({ values, label: atomLabel("A", n) })), { h: 34, rowgap: 16, max: MAX });
+          rows.rows.forEach((r, n) => { const t = 2.0 + n * 0.8; gsap.set(r.lbl, HIDDEN); m.ring(n, t, t + 0.75, AMBER); appear(r.lbl, t); r.wipe(t); });
+          const shape = box(ui, `<div class="shape">${G.atoms.length} × ${DH}</div>`, 1330, 380 + rows.H + 56, SMALL); pop(shape, 6.4);
+
+          // ---------- one number for the molecule ----------
+          caption(9.2, 17.6, { tag, title: "A property belongs to the molecule", sub: "A solubility, a toxicity, a melting point: one number for the whole molecule. The rows have to become one." });
+          const one = box(ui, `<div class="box">? <small>one number</small></div>`, 1330, 380 + rows.H + 56, SMALL);
+          vanish(shape, 10.6); pop(one, 10.8);
+          rows.rows.forEach((r, n) => pulse(r.lbl.firstChild, 12.0 + n * 0.15, 1.12));
+
+          c.fadeOut();
+          window.__timelines["atoms"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

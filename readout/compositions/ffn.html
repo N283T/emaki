@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 04, the feed-forward network: 300 numbers through a layer of 300, ReLU, and a layer down to one, then back to units.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #ffn { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #ffn .colname { font: 700 22px Inter; color: #8b95ab; text-align: center; }
+        #ffn .yhat { font: 800 46px "JetBrains Mono", monospace; color: #eef1f7; padding: 18px 28px; border-radius: 18px; border: 2px solid var(--accent); background: rgba(15,22,40,.96);
+          box-shadow: 0 0 40px -6px color-mix(in srgb, var(--accent) 60%, transparent); }
+        #ffn .formula { font: 600 36px "JetBrains Mono", monospace; color: #c8d0e0; }
+      </style>
+
+      <div id="ffn" data-composition-id="ffn" data-width="1920" data-height="1080">
+        <div id="ffn-bg" class="layer bg"></div>
+        <div id="ffn-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, chapter } = emaki, { MAX, num } = emaki.film; // kit.js, film.js
+          const c = chapter("ffn"), { layer, canvas, svg, box, to, set, pop, pulse, appear, vanish, show, link, caption, HIDDEN, SMALL } = c;
+          const tag = "04 · THE FEED-FORWARD NETWORK", G = D.graphs.A, M = D.mols.A, DH = D.dims.h, DF = D.dims.ffn;
+          const lines = canvas(), ui = layer();
+          const TOP = 390, CW = 1.5, H = DH * CW, mid = TOP + H / 2;
+
+          // ---------- two layers to one number ----------
+          caption(0.3, 9.0, { tag, title: "Two layers to one number", sub: `A linear layer of ${DF}, ReLU, and a linear layer down to 1: chemprop train's default.` });
+          const fp = c.heat(ui, 300, TOP, G.fp, { cw: CW, h: 40, max: Math.max(...G.fp) * 0.6, upright: true });
+          const hid = c.heat(ui, 900, TOP, G.hidden, { cw: CW, h: 40, max: Math.max(...G.hidden.map(Math.abs)) * 0.6, upright: true });
+          const names = [["fingerprint · " + DH, 300], ["hidden · " + DF, 900]].map(([t, x]) => box(ui, `<div class="colname">${t}</div>`, x, TOP + H + 34, HIDDEN));
+          fp.wipe(1.0); appear(names[0], 1.0);
+          const W1 = box(ui, `<div class="box">W<sub>1</sub><small>${DH} → ${DF}, + b</small></div>`, 600, mid, SMALL); pop(W1, 2.0);
+          hid.wipe(2.8); appear(names[1], 2.8);
+          const relu = box(ui, `<div class="box" style="border-color:#3a4a74;box-shadow:none">ReLU</div>`, 900, TOP - 50, SMALL); pop(relu, 4.4); hid.relu(4.8);
+          const W2 = box(ui, `<div class="box">W<sub>2</sub><small>${DF} → 1, + b</small></div>`, 1200, mid, SMALL); pop(W2, 6.0);
+          const y = box(ui, `<div class="yhat">ŷ = ${num(G.y, 4)}</div>`, 1560, mid, SMALL); pop(y, 7.0);
+          // the flow, drawn under the boxes
+          [[340, 520], [680, 860], [940, 1110], [1290, 1440]].forEach(([a, b], k) => link(lines, [a, mid], [b, mid], 1.6 + k * 1.6, null, "#46557c", 0.5));
+
+          // ---------- a prediction of nothing yet ----------
+          caption(9.2, 18.0, { tag, title: "A prediction of nothing, yet", sub: `With the weights it starts with, the model says ${num(G.y, 4)} for ${M.name}. Training is what will give it meaning.` });
+          pulse(y.firstChild, 10.0, 1.1);
+
+          // ---------- back to units ----------
+          caption(18.2, 27.6, { tag, title: "Back to units", sub: "chemprop train learns its targets as z-scores, so a prediction is scaled back with the training targets' mean and spread." });
+          const formula = box(ui, `<div class="formula">y = ŷ · σ + μ</div>`, 1560, mid + 140, HIDDEN); appear(formula, 19.4);
+
+          c.fadeIn(); c.fadeOut();
+          window.__timelines["ffn"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

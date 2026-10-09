@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 02, one vector: the atoms' rows added up and divided by 100, and why not a mean.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #pool { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #pool .val { font: 600 22px "JetBrains Mono", monospace; color: #8b95ab; }
+        #pool .val b { color: #eef1f7; }
+        #pool .barname { font: 700 24px Inter; color: #eef1f7; }
+        #pool .bar { height: 30px; border-radius: 6px; }
+        #pool .grp { font: 600 19px Inter; letter-spacing: .14em; color: #8b95ab; text-transform: uppercase; }
+      </style>
+
+      <div id="pool" data-composition-id="pool" data-width="1920" data-height="1080">
+        <div id="pool-bg" class="layer bg"></div>
+        <div id="pool-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, AMBER, BLUE, chapter } = emaki, { VIEW, MAX, atomLabel } = emaki.film; // kit.js, film.js
+          const c = chapter("pool"), { layer, box, to, set, pop, pulse, appear, vanish, show, caption, HIDDEN, SMALL } = c;
+          const tag = "02 · ONE VECTOR PER MOLECULE", G = D.graphs.A, P = D.graphs.P, M = D.mols.A, DH = D.dims.h, NORM = D.norm;
+          const world = layer(), ui = layer(), m = c.mol(world, "A", VIEW.corner);
+          const X = 790, top = Math.max(...G.sum);
+
+          // ---------- add the rows up ----------
+          caption(0.3, 9.4, { tag, title: "Add the rows up", sub: "chemprop train's default adds the atoms' rows together, number by number…" });
+          const rows = c.strips(ui, X, 340, G.atoms.map((values, n) => ({ values, label: atomLabel("A", n) })), { cw: 3, h: 28, rowgap: 10, max: MAX });
+          rows.rows.forEach((r, n) => { gsap.set(r.lbl, HIDDEN); appear(r.lbl, 0.8 + n * 0.15); r.wipe(0.8 + n * 0.15); });
+          const sumY = 340 + rows.H + 46, rule = box(ui, `<div style="width:900px;height:2px;background:#46557c"></div>`, X, sumY - 22, HIDDEN); appear(rule, 2.8);
+          // the sum is drawn against its own largest number, and so is the fingerprint: the two look alike
+          const sum = c.heat(ui, X, sumY, G.sum, { cw: 3, h: 36, max: top * 0.6 });
+          const sumLbl = box(ui, `<div class="rowlbl">Σ</div>`, X - 468, sumY + 18, { xPercent: -100, autoAlpha: 0 }); appear(sumLbl, 3.2); sum.wipe(3.2, 1.0);
+          const sumVal = box(ui, `<div class="val">largest <b>${top.toFixed(2)}</b></div>`, X + 450, sumY + 54, { xPercent: -100, autoAlpha: 0 }); appear(sumVal, 4.4);
+          M.atoms.forEach((_, n) => m.mark(n, 3.2 + n * 0.1, 9.2, AMBER));
+
+          // ---------- then divide by 100 ----------
+          caption(9.6, 17.4, { tag, title: `…then divides by ${NORM}`, sub: `NormAggregation scales the sum by a fixed ${NORM}. The result is the molecule's fingerprint: ${DH} numbers.` });
+          rows.rows.forEach((r) => to([r.el, r.lbl], 10.0, 10.5, { autoAlpha: 0.2 }));
+          const fpY = sumY + 90, fp = c.heat(ui, X, fpY, G.fp, { cw: 3, h: 36, max: (top / NORM) * 0.6 });
+          const fpLbl = box(ui, `<div class="rowlbl">÷ ${NORM}</div>`, X - 468, fpY + 18, { xPercent: -100, autoAlpha: 0 }); appear(fpLbl, 11.0); fp.wipe(11.0, 1.0);
+          const fpVal = box(ui, `<div class="val">largest <b>${(top / NORM).toFixed(4)}</b></div>`, X + 450, fpY + 54, { xPercent: -100, autoAlpha: 0 }); appear(fpVal, 12.2);
+          [...rows.rows.flatMap((r) => [r.el, r.lbl]), rule, sum.el, sumLbl, sumVal, fp.el, fpLbl, fpVal].forEach((el) => vanish(el, 17.6));
+
+          // ---------- not a mean ----------
+          const total = (v) => v.reduce((a, b) => a + b, 0), nA = M.atoms.length, nP = D.mols.P.atoms.length;
+          const norm = [total(G.fp), total(P.fp)], mean = [total(G.mean), total(P.mean)];
+          caption(17.8, 27.6, { tag, title: "Not a mean", sub: `A fixed ${NORM} keeps count of the atoms: paracetamol's ${nP} add up to ${(norm[1] / norm[0]).toFixed(1)} times as much as these ${nA}. Averaged, it would be only ${(mean[1] / mean[0]).toFixed(1)} times.` });
+          vanish(m.cam, 18.2, 0.5);
+          const groups = [["sum ÷ " + NORM, norm, c.ACCENT, 420], ["mean", mean, BLUE, 690]];
+          groups.forEach(([name, [a, p], color, y], g) => {
+            const t = 18.8 + g * 2.6, W = 760, scale = W / Math.max(a, p);
+            const head = box(ui, `<div class="grp">${name}</div>`, 560, y - 50, { xPercent: 0, autoAlpha: 0 }); appear(head, t);
+            [[M.name, a], [D.mols.P.name, p]].forEach(([who, v], k) => {
+              const yy = y + k * 56, label = box(ui, `<div class="barname">${who}</div>`, 540, yy, { xPercent: -100, autoAlpha: 0 });
+              const bar = box(ui, `<div class="bar" style="width:${v * scale}px;background:${color}"></div>`, 560, yy, { xPercent: 0, scaleX: 0, transformOrigin: "0 50%", autoAlpha: 1 });
+              const val = box(ui, `<div class="val"><b>${v.toFixed(2)}</b></div>`, 560 + v * scale + 16, yy, { xPercent: 0, autoAlpha: 0 });
+              appear(label, t + k * 0.3); to(bar, t + k * 0.3, t + k * 0.3 + 0.8, { scaleX: 1 }, "power2.inOut"); appear(val, t + k * 0.3 + 0.8);
+            });
+          });
+          const note = box(ui, `<div class="note">all ${DH} numbers of the fingerprint, added</div>`, 940, 880, HIDDEN); appear(note, 21.0);
+
+          c.fadeIn(); c.fadeOut();
+          window.__timelines["pool"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 05, the whole model: MolGraph, message passing, aggregation and the FFN in a row, and the weights in each.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #model { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #model .stage { width: 330px; padding: 20px 14px; border-radius: 18px; border: 2px solid #3a4a74; background: rgba(15,22,40,.96); text-align: center; }
+        #model .stage b { display: block; font: 800 25px Inter; color: #eef1f7; }
+        #model .stage small { display: block; font: 600 22px "JetBrains Mono", monospace; color: var(--accent); margin-top: 8px; }
+        #model .stage.plain small { color: #8b95ab; }
+        #model .flow { font: 600 21px "JetBrains Mono", monospace; color: #8b95ab; text-align: center; }
+        #model .total { font: 800 92px Inter; letter-spacing: -.03em; color: #eef1f7; }
+        #model .total small { font: 600 30px Inter; color: #8b95ab; margin-left: 18px; letter-spacing: 0; }
+        #model .part { position: absolute; top: 0; height: 40px; }
+        #model .partname { font: 600 21px "JetBrains Mono", monospace; color: #c8d0e0; }
+      </style>
+
+      <div id="model" data-composition-id="model" data-width="1920" data-height="1080">
+        <div id="model-bg" class="layer bg"></div>
+        <div id="model-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, fmt, chapter } = emaki; // kit.js
+          const c = chapter("model"), { layer, canvas, div, box, to, set, pop, pulse, appear, vanish, show, link, caption, HIDDEN, SMALL } = c;
+          const tag = "05 · THE WHOLE MODEL", G = D.graphs.A, P = D.params, DH = D.dims.h;
+          const lines = canvas(), ui = layer();
+
+          // ---------- the pipeline ----------
+          caption(0.3, 11.0, { tag, title: "The whole model", sub: "MPNN: message passing, aggregation, a feed-forward network. All of its weights are trained together, end to end." });
+          const Y = 470, xs = [210, 590, 960, 1330, 1710];
+          const stages = [["MolGraph", "", true], ["BondMessagePassing", fmt(P.mp)], ["NormAggregation", fmt(P.agg)], ["RegressionFFN", fmt(P.ffn)], ["ŷ", "", true]]
+            .map(([name, n, plain], k) => { const el = box(ui, `<div class="stage${plain ? " plain" : ""}" style="${k === 4 ? "width:140px" : ""}"><b>${name}</b>${n ? `<small>${n} weights</small>` : ""}</div>`, xs[k], Y, SMALL); pop(el, 1.0 + k * 0.7); return el; });
+          // what flows between them, for N-methylacetamide
+          const flows = ["V, E", `${G.atoms.length} × ${DH}`, `${DH}`, "1"];
+          flows.forEach((text, k) => { const x = (xs[k] + xs[k + 1]) / 2;
+            link(lines, [xs[k] + (k ? 150 : 110), Y], [xs[k + 1] - (k === 3 ? 70 : 150), Y], 1.4 + k * 0.7, null, "#46557c");
+            appear(box(ui, `<div class="flow">${text}</div>`, x, Y + 90, HIDDEN), 1.8 + k * 0.7); });
+
+          // ---------- the weights ----------
+          caption(11.2, 23.6, { tag, title: `${fmt(P.all)} numbers to learn`, sub: "Three matrices pass the messages, two layers make the prediction, and the aggregation has none." });
+          const total = box(ui, `<div class="total">${fmt(P.all)}<small>weights</small></div>`, 960, 730, SMALL); pop(total, 12.0);
+          // the weights as one bar, cut into its parts
+          const W = 1500, X0 = 960 - W / 2, BY = 840, parts = [["W_i", P.W_i, "#c084fc"], ["W_h", P.W_h, "#e879f9"], ["W_o", P.W_o, "#f0abfc"], ["FFN", P.ffn, "#ffb547"]];
+          const bar = div(ui, "anchor"); gsap.set(bar, { x: X0, y: BY });
+          let x = 0;
+          parts.forEach(([name, n, color], k) => {
+            const w = (n / P.all) * W, t = 13.4 + k * 0.6, el = div(bar, "part");
+            gsap.set(el, { x: x + 2, width: w - 4, backgroundColor: color, borderRadius: 8, scaleX: 0, transformOrigin: "0 50%" }); to(el, t, t + 0.6, { scaleX: 1 }, "power2.out");
+            const lbl = box(ui, `<div class="partname">${name.replace("_", "<sub>").replace(/$/, name.includes("_") ? "</sub>" : "")} · ${fmt(n)}</div>`, X0 + x + w / 2, BY + 66, HIDDEN); appear(lbl, t + 0.4);
+            x += w;
+          });
+          [1, 3].forEach((k, n) => pulse(stages[k].firstChild, 14.0 + n * 1.8, 1.06));
+
+          c.fadeIn(); c.fadeOut();
+          window.__timelines["model"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

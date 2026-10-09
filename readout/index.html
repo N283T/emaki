@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <title>Readout</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="data.js"></script>
+    <script src="kit.js"></script>
+    <script src="film.js"></script>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="157" data-width="1920" data-height="1080">
+      <!-- One clip per chapter, each a sub-composition. `node sync-clips.mjs` sets the starts and durations
+           from the chapter table in film.js. -->
+      <div id="el-intro" class="clip" data-composition-id="intro" data-composition-src="compositions/intro.html" data-start="0" data-duration="8" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-atoms" class="clip" data-composition-id="atoms" data-composition-src="compositions/atoms.html" data-start="8" data-duration="18" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-pool" class="clip" data-composition-id="pool" data-composition-src="compositions/pool.html" data-start="26" data-duration="28" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-fingerprint" class="clip" data-composition-id="fingerprint" data-composition-src="compositions/fingerprint.html" data-start="54" data-duration="22" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-ffn" class="clip" data-composition-id="ffn" data-composition-src="compositions/ffn.html" data-start="76" data-duration="28" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-model" class="clip" data-composition-id="model" data-composition-src="compositions/model.html" data-start="104" data-duration="24" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-drug" class="clip" data-composition-id="drug" data-composition-src="compositions/drug.html" data-start="128" data-duration="22" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="el-outro" class="clip" data-composition-id="outro" data-composition-src="compositions/outro.html" data-start="150" data-duration="7" data-track-index="1" data-width="1920" data-height="1080"></div>
+    </div>
+    <script>
+      // every chapter animates itself; the film's own timeline has nothing to do
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

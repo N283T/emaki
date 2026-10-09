@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 06, a real drug: paracetamol's eleven rows become the same 300 numbers, and one prediction.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #drug { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #drug .yhat { font: 800 40px "JetBrains Mono", monospace; color: #eef1f7; padding: 14px 24px; border-radius: 16px; border: 2px solid var(--accent); background: rgba(15,22,40,.96); }
+      </style>
+
+      <div id="drug" data-composition-id="drug" data-width="1920" data-height="1080">
+        <div id="drug-bg" class="layer bg"></div>
+        <div id="drug-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, AMBER, chapter } = emaki, { VIEW, MAX, atomLabel, num } = emaki.film; // kit.js, film.js
+          const c = chapter("drug"), { layer, box, to, set, pop, pulse, appear, vanish, show, caption, HIDDEN, SMALL } = c;
+          const tag = "06 · A REAL DRUG", G = D.graphs.P, M = D.mols.P, n = M.atoms.length, DH = D.dims.h, NORM = D.norm;
+          const world = layer(), ui = layer(), m = c.mol(world, "P", VIEW.drugLeft, { drawn: false });
+
+          // ---------- eleven rows ----------
+          caption(0.3, 7.6, { tag, title: M.name, sub: `${n} atoms, so ${n} rows — and still one fingerprint of ${DH}.` });
+          m.drawIn(0.5);
+          const X = 1300, rows = c.strips(ui, X, 330, G.atoms.map((values, a) => ({ values, label: atomLabel("P", a) })), { cw: 2, h: 18, rowgap: 6, max: MAX, size: 17 });
+          rows.rows.forEach((r, a) => { const t = 3.2 + a * 0.25; gsap.set(r.lbl, HIDDEN); appear(r.lbl, t); r.wipe(t, 0.4); m.mark(a, t, 7.4, AMBER); });
+
+          // ---------- one vector, one number ----------
+          caption(7.8, 21.6, { tag, title: "Any size in, one vector out", sub: `Add up ${D.mols.A.atoms.length} rows or ${n}, divide by ${NORM}: the network after it always sees ${DH} numbers.` });
+          const fy = 330 + rows.H + 50, top = Math.max(...G.fp);
+          const fp = c.heat(ui, X, fy, G.fp, { cw: 2, h: 34, max: top * 0.6 });
+          const fl = box(ui, `<div class="rowlbl">Σ ÷ ${NORM}</div>`, X - 318, fy + 17, { xPercent: -100, autoAlpha: 0 });
+          rows.rows.forEach((r) => to([r.el, r.lbl], 8.6, 9.1, { autoAlpha: 0.3 }));
+          appear(fl, 9.0); fp.wipe(9.0, 1.0);
+          const y = box(ui, `<div class="yhat">ŷ = ${num(G.y, 4)}</div>`, X, fy + 130, SMALL); pop(y, 11.0);
+          const note = box(ui, `<div class="note">untrained, like everything in this film</div>`, X, fy + 210, HIDDEN); appear(note, 12.0);
+
+          c.fadeIn(); c.fadeOut();
+          window.__timelines["drug"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

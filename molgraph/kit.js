@@ -1,12 +1,12 @@
 // ============================================================================
-// The engine of the Chemprop films. molgraph/ and messages/ carry identical
-// copies of this file. It grew out of the fingerprint films' kit: the camera,
-// the molecule, captions and the timeline helpers are theirs, and what is new
-// draws what Chemprop works with: directed bonds, feature vectors as rows of
-// cells cut into blocks, and hidden vectors as strips. What differs per film
-// is data.js (the numbers, written by data.py), film.js (the chapters and
-// their pacing) and the chapters. Nothing touches the DOM while it loads, so the page can
-// load it in <head>. Everything hangs off one global, `emaki`.
+// The engine of the Chemprop films. molgraph/, messages/ and readout/ carry
+// identical copies of this file. It grew out of the fingerprint films' kit:
+// the camera, the molecule, captions and the timeline helpers are theirs, and
+// what is new draws what Chemprop works with: directed bonds, feature vectors
+// as rows of cells cut into blocks, and hidden vectors as strips. What differs
+// per film is data.js (the numbers, written by data.py), film.js (the chapters
+// and their pacing) and the chapters. Nothing touches the DOM while it loads,
+// so the page can load it in <head>. Everything hangs off one global, `emaki`.
 // ============================================================================
 window.emaki = window.emaki || (() => {
   const D = window.emakiData;
@@ -170,7 +170,7 @@ window.emaki = window.emaki || (() => {
       // ----- directed bonds -----
       // Directed bond k (D.graphs[key].edges[k], from atom u to atom v) is an arrow beside its bond, on the
       // right of the way it points, so that the two directions of a bond run on either side of it.
-      const E = D.graphs[key].edges, SIDE = 36, CLEAR = 64;
+      const E = D.graphs[key]?.edges ?? [], SIDE = 36, CLEAR = 64; // a film without directed bonds has none
       const along = (k) => { const [u, w] = E[k], A = M.atoms[u], B = M.atoms[w], L = Math.hypot(B.x - A.x, B.y - A.y);
         const dx = (B.x - A.x) / L, dy = (B.y - A.y) / L; return { A, B, L, dx, dy, nx: -dy, ny: dx }; };
       // the world point beside directed bond k, `off` from the bond's axis, halfway along
@@ -311,19 +311,22 @@ window.emaki = window.emaki || (() => {
     };
 
     // ----- a hidden vector as a strip -----
-    // `values` side by side, `cw` pixels each, the strip's top centre at the screen point (x, y). A positive number
-    // is ACCENT and a negative one BLUE, as strong as its size against `max`; a 0 leaves the cell dark.
-    // wipe(t) draws the strip in from the left, and relu(t) fades its negative numbers out.
-    const heat = (parent, x, y, values, { cw = 2, h = 24, max = 0.5 } = {}) => {
-      const W = values.length * cw, el = div(parent, "anchor"), cid = `${id}-heat${serial++}`; gsap.set(el, { x: x - W / 2, y });
-      const s = svg("svg", { class: "world", viewBox: `0 0 ${W} ${h}`, width: W, height: h }, el);
-      svg("defs", {}, s).innerHTML = `<clipPath id="${cid}"><rect width="${W}" height="${h}"/></clipPath>`;
-      const clip = s.querySelector("rect"), body = svg("g", { "clip-path": `url(#${cid})` }, s);
-      svg("rect", { width: W, height: h, fill: "#141c33" }, body);
+    // `values` side by side, `cw` pixels each, the strip's top centre at the screen point (x, y); `upright` stands it
+    // on end, the first number at the top. A positive number is ACCENT and a negative one BLUE, as strong as its size
+    // against `max`; a 0 leaves the cell dark. wipe(t) draws the strip in from its start, and relu(t) fades its
+    // negative numbers out.
+    const heat = (parent, x, y, values, { cw = 2, h = 24, max = 0.5, upright = false } = {}) => {
+      const long = values.length * cw, [W, H] = upright ? [h, long] : [long, h];
+      const el = div(parent, "anchor"), cid = `${id}-heat${serial++}`; gsap.set(el, { x: x - W / 2, y });
+      const s = svg("svg", { class: "world", viewBox: `0 0 ${W} ${H}`, width: W, height: H }, el);
+      svg("defs", {}, s).innerHTML = `<clipPath id="${cid}"><rect width="${W}" height="${H}"/></clipPath>`;
+      const clip = s.querySelector("rect"), body = svg("g", { "clip-path": `url(#${cid})` }, s), side = upright ? "height" : "width";
+      svg("rect", { width: W, height: H, fill: "#141c33" }, body);
       const pos = svg("g", {}, body), neg = svg("g", {}, body);
-      values.forEach((v, i) => { if (v) svg("rect", { x: i * cw, width: cw, height: h, fill: v > 0 ? ACCENT : BLUE, "fill-opacity": Math.min(1, Math.abs(v) / max) }, v > 0 ? pos : neg); });
-      return { el, W, H: h, pos, neg,
-        wipe: (t, d = 0.6) => { gsap.set(clip, { attr: { width: 0 } }); to(clip, t, t + d, { attr: { width: W } }, "power2.inOut"); },
+      values.forEach((v, i) => { if (v) svg("rect", { ...(upright ? { y: i * cw, width: h, height: cw } : { x: i * cw, width: cw, height: h }),
+        fill: v > 0 ? ACCENT : BLUE, "fill-opacity": Math.min(1, Math.abs(v) / max) }, v > 0 ? pos : neg); });
+      return { el, W, H, pos, neg,
+        wipe: (t, d = 0.6) => { gsap.set(clip, { attr: { [side]: 0 } }); to(clip, t, t + d, { attr: { [side]: upright ? H : W } }, "power2.inOut"); },
         relu: (t) => to(neg, t, t + 0.6, { autoAlpha: 0 }),
       };
     };

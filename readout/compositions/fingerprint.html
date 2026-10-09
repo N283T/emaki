@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 03, a learned fingerprint: the same length for every molecule, like ECFP4's, but trained, not hashed.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #fingerprint { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #fingerprint .fpname { font: 700 26px Inter; color: #eef1f7; }
+        #fingerprint .fpname small { font: 500 22px "JetBrains Mono", monospace; color: #8b95ab; margin-left: 14px; }
+        #fingerprint .chip { font: 700 22px Inter; padding: 8px 18px; border-radius: 12px; border: 2px solid; }
+      </style>
+
+      <div id="fingerprint" data-composition-id="fingerprint" data-width="1920" data-height="1080">
+        <div id="fingerprint-bg" class="layer bg"></div>
+        <div id="fingerprint-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, AMBER, chapter } = emaki; // kit.js
+          const c = chapter("fingerprint"), { svg, layer, div, box, to, set, pop, pulse, appear, vanish, show, caption, HIDDEN, SMALL } = c;
+          const tag = "03 · A LEARNED FINGERPRINT", G = D.graphs.A, DH = D.dims.h, SIZE = 2048;
+          const ui = layer(), X = 960, W = 900;
+
+          // ---------- the same length for every molecule ----------
+          caption(0.3, 10.0, { tag, title: "A fingerprint, learned", sub: "Chemprop calls this vector the molecule's fingerprint. Like ECFP4's, it has the same length for every molecule." });
+          // ECFP4 of the same molecule, as 2048 bits along the same width
+          const ey = 430, ewrap = div(ui, "anchor"); gsap.set(ewrap, { x: X - W / 2, y: ey });
+          const es = svg("svg", { class: "world", viewBox: `0 0 ${W} 36`, width: W, height: 36 }, ewrap);
+          svg("rect", { width: W, height: 36, fill: "#141c33" }, es);
+          G.ecfp.forEach((bit) => svg("rect", { x: (bit / SIZE) * W - 1.5, width: 3, height: 36, fill: AMBER }, es));
+          const ename = box(ui, `<div class="fpname">ECFP4<small>${G.ecfp.length} of ${SIZE} bits on</small></div>`, X - W / 2, ey - 34, { xPercent: 0, autoAlpha: 0 });
+          gsap.set(ewrap, HIDDEN); appear(ewrap, 1.2, 0.6); appear(ename, 1.2);
+          const fy = 640, fp = c.heat(ui, X, fy, G.fp, { cw: 3, h: 36, max: Math.max(...G.fp) * 0.6 });
+          const fname = box(ui, `<div class="fpname">Chemprop<small>${DH} numbers</small></div>`, X - W / 2, fy - 34, { xPercent: 0, autoAlpha: 0 });
+          appear(fname, 3.2); fp.wipe(3.2, 1.0);
+
+          // ---------- hashed, or trained ----------
+          caption(10.2, 21.6, { tag, title: "Hashed, or trained", sub: `ECFP4 sets its bits by hashing, the same whatever you predict. These ${DH} numbers will be whatever helps the model predict its target.` });
+          [["hashed · fixed", AMBER, ey], ["trained · per task", c.ACCENT, fy]].map(([text, color, y], k) => {
+            const el = box(ui, `<div class="chip" style="color:${color};border-color:${color}">${text}</div>`, X + W / 2, y + 72, { ...SMALL, xPercent: -100 }); pop(el, 11.2 + k * 0.8); });
+
+          c.fadeIn(); c.fadeOut();
+          window.__timelines["fingerprint"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

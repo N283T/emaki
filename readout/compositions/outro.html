@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- The closing card: the title again, the model as Chemprop builds it, and what the next film is about.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #outro { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+      </style>
+
+      <div id="outro" data-composition-id="outro" data-width="1920" data-height="1080">
+        <div id="outro-bg" class="layer bg"></div>
+        <div id="outro-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, rnd, chapter } = emaki; // kit.js
+          const c = chapter("outro"), { svg, canvas, layer, box, to, appear, caption, HIDDEN } = c;
+
+          // the points of the title card and their joins, fainter
+          const sky = canvas(), N = 15;
+          const pts = Array.from({ length: N }, (_, n) => { const a = (n / N) * Math.PI * 2 + rnd(n) * 0.5, r = 0.7 + rnd(n + 40) * 0.38;
+            return [960 + Math.cos(a) * 800 * r, 540 + Math.sin(a) * 410 * r]; });
+          const near = (i) => pts.map((p, j) => [Math.hypot(p[0] - pts[i][0], p[1] - pts[i][1]), j]).sort((a, b) => a[0] - b[0]).slice(1, 3).map(([, j]) => j);
+          const joins = new Set(); pts.forEach((_, i) => near(i).forEach((j) => joins.add(i < j ? `${i}-${j}` : `${j}-${i}`)));
+          [...joins].forEach((key, k) => {
+            const [i, j] = key.split("-").map(Number), [x1, y1] = pts[i], [x2, y2] = pts[j], L = Math.hypot(x2 - x1, y2 - y1);
+            const nx = (-(y2 - y1) / L) * 7, ny = ((x2 - x1) / L) * 7, t = 0.1 + rnd(k + 9) * 1.2;
+            [[x1 + nx, y1 + ny, x2 + nx, y2 + ny], [x2 - nx, y2 - ny, x1 - nx, y1 - ny]].forEach(([a, b, cx, cy], d) => {
+              const line = svg("line", { x1: a, y1: b, x2: cx, y2: cy, stroke: c.ACCENT, "stroke-width": 2, "stroke-opacity": 0.22, pathLength: 1, "stroke-dasharray": "1 1.1", "stroke-dashoffset": 1.05 }, sky);
+              to(line, t + d * 0.25, t + d * 0.25 + 0.8, { strokeDashoffset: 0 }, "power2.inOut");
+            });
+          });
+          caption(0.2, c.LEN + 1, { hero: true, title: "Readout", sub: `Add the atoms up, then two layers down to one number.` });
+          const ui = layer();
+          appear(box(ui, `<div class="api">MPNN(BondMessagePassing(), NormAggregation(), RegressionFFN()) · Chemprop ${D.chemprop}</div>`, 960, 760, HIDDEN), 1.6, 0.8);
+          appear(box(ui, `<div class="next"><b>Next</b> · training: how ${D.params.all.toLocaleString("en-US")} weights learn</div>`, 960, 840, HIDDEN), 2.6, 0.8);
+
+          c.fadeIn();
+          window.__timelines["outro"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>
