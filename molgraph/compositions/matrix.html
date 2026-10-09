@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 02, the atom matrix: every atom gets its row of 72, and the rows stack into V.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #matrix { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+      </style>
+
+      <div id="matrix" data-composition-id="matrix" data-width="1920" data-height="1080">
+        <div id="matrix-bg" class="layer bg"></div>
+        <div id="matrix-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, INK, chapter } = emaki, { VIEW, CARBONYL } = emaki.film; // kit.js, film.js
+          const c = chapter("matrix"), { layer, box, to, set, pop, pulse, appear, vanish, show, fly, caption, HIDDEN, SMALL } = c;
+          const tag = "02 · THE ATOM MATRIX", G = D.graphs.A, A = D.mols.A.atoms;
+          const world = layer(), ui = layer(), m = c.mol(world, "A", VIEW.carbonylUp);
+          const label = (n) => `<span class="ix">${n}</span><span style="color:${INK[A[n].el]}">${A[n].text}</span>`;
+
+          // ---------- every atom gets a row ----------
+          caption(0.3, 8.6, { tag, title: "Every atom gets a row", sub: "The same eight questions, asked of each of the five atoms." });
+          m.move(0.3, 1.6, VIEW.corner);
+          // the carbonyl carbon's row, where the last chapter left it, goes to its place in the matrix
+          const carried = c.vec(ui, 960, 900, G.V[CARBONYL], "atom", { lit: true, names: true });
+          const TOP = 600, CELL = 18, mx = c.matrix(ui, 1010, TOP, G.V.map((values, n) => ({ values, label: label(n), lit: n === CARBONYL })), "atom", { cell: CELL, gap: 3, space: 10, names: true });
+          mx.rows.forEach((r) => gsap.set([...r.cells, r.lbl], HIDDEN));
+          mx.rows[0].labels.flat().forEach((e) => gsap.set(e, HIDDEN));
+          carried.labels.flat().forEach((e) => vanish(e, 0.8));
+          const row = mx.rows[CARBONYL];
+          gsap.set(carried.el, { transformOrigin: "0 0" });
+          to(carried.el, 0.8, 2.0, { x: mx.left, y: TOP + CARBONYL * mx.step, scale: row.W / carried.W }, "power2.inOut");
+          set(carried.el, 2.0, { autoAlpha: 0 }); set(row.cells, 2.0, { autoAlpha: 1 }); appear(row.lbl, 1.8);
+          mx.rows[0].labels.flat().forEach((e) => appear(e, 2.0));
+          // then the other four, each lit as its atom is singled out
+          A.map((_, n) => n).filter((n) => n !== CARBONYL).forEach((n, k) => {
+            const t = 2.6 + k * 1.3, r = mx.rows[n];
+            m.ring(n, t, t + 1.2); appear(r.lbl, t); appear(r.cells, t, 0.3); r.light(t + 0.3, { step: 0.06 });
+          });
+
+          // ---------- same atom, same row ----------
+          caption(8.8, 15.4, { tag, title: "Same atom, same row", sub: "The two methyls get identical rows: features describe an atom, not where it sits." });
+          const twins = A.map((_, n) => n).filter((n) => G.V[n].join() === G.V[0].join());
+          const rest = mx.rows.filter((_, n) => !twins.includes(n));
+          rest.forEach((r) => { to([r.el, r.lbl], 9.2, 9.7, { autoAlpha: 0.25 }); to([r.el, r.lbl], 14.8, 15.3, { autoAlpha: 1 }); });
+          twins.forEach((n, k) => { m.ring(n, 9.6 + k * 0.4, 14.8, c.ACCENT); pulse(mx.rows[n].lbl.firstChild, 10.0 + k * 0.4, 1.2); pulse(mx.rows[n].lbl.firstChild, 12.2 + k * 0.4, 1.2); });
+          const same = box(ui, `<div class="note">rows ${twins.join(" and ")}: the same ${G.V[0].length} numbers</div>`, 1010, TOP + mx.H + 60, HIDDEN); show(same, 10.6, 14.9);
+
+          // ---------- this is V ----------
+          caption(15.6, 21.8, { tag, title: "This is V", sub: `One row per atom, ${G.V[0].length} columns: the atom feature matrix of a MolGraph.` });
+          const shape = box(ui, `<div class="shape">V <small>${G.V.length} × ${G.V[0].length}</small></div>`, 1010, TOP + mx.H + 64, SMALL); pop(shape, 16.4);
+          mx.rows.forEach((r, n) => pulse(r.lbl.firstChild, 16.8 + n * 0.15, 1.15));
+
+          c.fadeOut();
+          window.__timelines["matrix"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

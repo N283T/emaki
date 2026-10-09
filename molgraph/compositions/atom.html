@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 01, atom features: eight questions, each answered by lighting one cell of its block, 72 cells in all.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #atom { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #atom .sum { font: 700 30px "JetBrains Mono", monospace; color: #eef1f7; }
+        #atom .sum i { font-style: normal; color: #8b95ab; font-weight: 500; }
+        #atom .val { font: 700 24px "JetBrains Mono", monospace; color: var(--accent); }
+      </style>
+
+      <div id="atom" data-composition-id="atom" data-width="1920" data-height="1080">
+        <div id="atom-bg" class="layer bg"></div>
+        <div id="atom-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, INK, chapter } = emaki, { VIEW, CARBONYL } = emaki.film; // kit.js, film.js
+          const c = chapter("atom"), { layer, canvas, box, to, set, pop, pulse, appear, vanish, show, fly, link, caption, HIDDEN, SMALL } = c;
+          const tag = "01 · ATOM FEATURES", G = D.graphs.A, row = G.V[CARBONYL], info = G.info[CARBONYL], blocks = D.blocks.atom;
+          const world = layer(), lines = canvas(), ui = layer(), m = c.mol(world, "A", VIEW.wide);
+
+          // ---------- the carbonyl carbon: eight questions ----------
+          caption(0.2, 9.4, { tag, title: "Eight questions per atom", sub: "Chemprop asks every atom the same eight things." });
+          m.move(0.3, 1.5, VIEW.carbonyl); m.ring(CARBONYL, 1.0, 9.2);
+          // the answer to each question, read off the cell that is on in its block
+          const answer = (b) => b.name === "aromatic" ? (row[b.start] ? "yes" : "no") : b.name.startsWith("mass") ? info.mass.toFixed(3)
+            : b.choices[b.choices.findIndex((_, k) => row[b.start + k])];
+          const X = 1480, Y = (n) => 300 + n * 68;
+          const cards = blocks.map((b, n) => {
+            const text = answer(b), color = n === 0 ? INK[text] : "#eef1f7";
+            const el = box(ui, `<div class="card">${b.name}<b style="color:${color}">${text}</b></div>`, ...m.at(CARBONYL, VIEW.carbonyl), { scale: 0.3, autoAlpha: 0 });
+            const t = 1.7 + n * 0.75; to(el, t, t + 0.6, { x: X, y: Y(n), scale: 1, autoAlpha: 1 });
+            return el;
+          });
+
+          // ---------- one cell per answer ----------
+          caption(9.6, 19.6, { tag, title: "One cell per answer", sub: "Each answer lights one cell of its block. A last cell, ?, catches anything not on the list." });
+          m.move(9.6, 10.8, VIEW.carbonylUp);
+          const VY = 900, v = c.vec(ui, 960, VY, row, "atom", { names: true });
+          gsap.set(v.el, { autoAlpha: 0 }); appear(v.el, 9.9, 0.5); v.name(9.9);
+          blocks.forEach((b, n) => {
+            const mine = v.hotOnes.filter((i) => i >= b.start && i < b.start + b.choices.length), t = 10.6 + n * 0.62, [x, y] = v.at(mine[0] ?? b.start);
+            fly(cards[n], t, t + 0.55, { x, y: y - 4, scale: 0.18, autoAlpha: 0.2 }, { arc: 60 }); set(cards[n], t + 0.55, { autoAlpha: 0 });
+            v.light(t + 0.45, { only: mine });
+          });
+          // the degree block, magnified: hydrogens count, so the carbonyl carbon has three neighbours
+          const DEG = blocks.findIndex((b) => b.name === "degree"), z = c.zoom(ui, 1440, 560, "atom", DEG, row);
+          pop(z.el, 15.9, 1.2); z.on(16.5); link(lines, [1440, 650], v.over(DEG), 16.0, 19.4); vanish(z.el, 19.4);
+
+          // ---------- two cells are not one-hot ----------
+          caption(19.8, 25.4, { tag, title: "Two cells are not one-hot", sub: `Aromatic is a plain yes or no. Mass is the atom's mass over 100: ${row[blocks.at(-1).start]} for carbon.` });
+          const [AR, MASS] = [blocks.length - 2, blocks.length - 1].map((b) => blocks[b].start);
+          [[AR, row[AR] ? "1" : "0"], [MASS, row[MASS]]].forEach(([i, text], k) => {
+            const [x, y] = v.at(i), t = 20.6 + k * 1.2, tagEl = box(ui, `<div class="val">${text}</div>`, x + 12, y + 54 + k * 34, { ...SMALL, xPercent: -100 });
+            pop(tagEl, t); pulse(v.cells[i], t, 1.6); vanish(tagEl, 25.2);
+          });
+          const sum = box(ui, `<div class="sum">${info.mass} <i>/ 100 =</i> ${row[MASS]}</div>`, 1440, 600, SMALL); pop(sum, 22.0, 1.1); vanish(sum, 25.2);
+
+          // ---------- 72 numbers ----------
+          caption(25.6, 30.8, { tag, title: `${row.length} numbers for one atom`, sub: "Nothing is hashed or folded: every cell means one thing, and the row reads back." });
+          v.hotOnes.forEach((i, k) => pulse(v.cells[i], 26.4 + k * 0.12, 1.5));
+
+          window.__timelines["atom"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

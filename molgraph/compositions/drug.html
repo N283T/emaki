@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 06, a real drug: paracetamol's 22 directed bonds, its matrices, and the cells only a ring lights.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #drug { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #drug .shape { font-size: 38px; }
+        #drug .colname { font: 600 20px "JetBrains Mono", monospace; }
+      </style>
+
+      <div id="drug" data-composition-id="drug" data-width="1920" data-height="1080">
+        <div id="drug-bg" class="layer bg"></div>
+        <div id="drug-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, INK, AMBER, GREEN, arrowText, chapter } = emaki, { VIEW } = emaki.film; // kit.js, film.js
+          const c = chapter("drug"), { layer, box, to, set, pop, pulse, appear, vanish, show, caption, HIDDEN, SMALL } = c;
+          const tag = "06 · A REAL DRUG", G = D.graphs.P, M = D.mols.P, K = G.edges.length;
+          const world = layer(), ui = layer(), m = c.mol(world, "P", VIEW.drug, { drawn: false });
+
+          // ---------- paracetamol, and its directed bonds ----------
+          caption(0.3, 7.2, { tag, title: M.name, sub: `${M.atoms.length} atoms, ${M.bonds.length} bonds: ${K} directed bonds.` });
+          m.drawIn(0.5);
+          G.edges.forEach((_, k) => m.direct(k, 3.4 + k * 0.09));
+
+          // ---------- its matrices; the ring lights new cells ----------
+          caption(7.4, 15.8, { tag, title: "The ring lights new cells", sub: "Its six carbons are aromatic, and its six ring bonds are aromatic and in a ring." });
+          m.move(7.4, 8.6, VIEW.drugLeft);
+          const X = 1340, OPT = { cell: 11, gap: 2, space: 6 };
+          const V = c.matrix(ui, X, 330, G.V.map((values, n) => ({ values, label: `<span style="color:${INK[M.atoms[n].el]}">${M.atoms[n].text}</span>` })), "atom", { ...OPT, tall: 1.6, rowgap: 4, lit: true });
+          const E = c.matrix(ui, X, 640, G.E.map((values, k) => ({ values, label: arrowText("P", k) })), "bond", { ...OPT, tall: 1.3, rowgap: 3, lit: true });
+          V.rows.forEach((r, n) => { gsap.set([r.el, r.lbl], HIDDEN); appear([r.el, r.lbl], 8.4 + n * 0.1, 0.3); });
+          E.rows.forEach((r, k) => { gsap.set([r.el, r.lbl], HIDDEN); appear([r.el, r.lbl], 9.2 + k * 0.05, 0.3); });
+          // the aromatic atoms, and their column of V
+          const AROM = D.blocks.atom.find((b) => b.name === "aromatic").start, ringAtoms = G.info.map((a, n) => n).filter((n) => G.info[n].aromatic);
+          V.col(AROM, GREEN, 11.0, 15.6); const vName = box(ui, `<div class="colname" style="color:${GREEN}">aromatic</div>`, V.rows[0].at(AROM)[0] - 30, 330 - 30, HIDDEN); show(vName, 11.0, 15.6);
+          ringAtoms.forEach((n, k) => m.mark(n, 11.2 + k * 0.08, 15.6, GREEN));
+          // the ring bonds, and their two columns of E
+          const bt = D.blocks.bond, AR = bt.find((b) => b.name === "bond type").start + bt.find((b) => b.name === "bond type").choices.indexOf("aromatic"), RING = bt.find((b) => b.name === "in ring").start;
+          [AR, RING].forEach((i, k) => E.col(i, AMBER, 12.8 + k * 0.4, 15.6));
+          const eName = box(ui, `<div class="colname" style="color:${AMBER}">aromatic · in ring</div>`, E.rows[0].at(AR)[0] + 60, 640 - 44, HIDDEN); show(eName, 12.8, 15.6);
+          m.light(G.bondinfo.map((b, n) => n).filter((n) => G.bondinfo[n].ring), 13.0, 15.6, AMBER, false);
+
+          // ---------- any molecule, the same recipe ----------
+          caption(16.0, 24.4, { tag, title: "Any molecule, the same recipe", sub: "V, E, edge_index and rev_edge_index: a MolGraph, what Chemprop's message passing starts from." });
+          const shapes = [["V", `${G.V.length} × ${G.V[0].length}`], ["E", `${G.E.length} × ${G.E[0].length}`], ["edge_index", `2 × ${K}`], ["rev_edge_index", `${K}`]]
+            .map(([name, size], n) => { const el = box(ui, `<div class="shape">${name} <small>${size}</small></div>`, 120, 790 + n * 62, { ...SMALL, xPercent: 0 }); gsap.set(el, { transformOrigin: "0 50%" }); pop(el, 16.8 + n * 0.4); return el; });
+
+          c.fadeIn(); c.fadeOut();
+          window.__timelines["drug"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

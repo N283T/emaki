@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 05, a directed bond's input: the row of the atom it leaves, then the bond's row. The two
+         directions of a bond start apart, and W_i takes the 86 numbers to the hidden size.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #input { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #input .half { font: 500 21px "JetBrains Mono", monospace; color: #9aa5bd; }
+        #input .half b { font-weight: 700; }
+        #input .eq { font: 800 40px "JetBrains Mono", monospace; color: #eef1f7; }
+        #input .tick { width: 15px; height: 5px; border-radius: 2px; background: #ff5d5d; box-shadow: 0 0 10px #ff5d5d; }
+        #input .formula { font: 600 34px "JetBrains Mono", monospace; color: #c8d0e0; }
+      </style>
+
+      <div id="input" data-composition-id="input" data-width="1920" data-height="1080">
+        <div id="input-bg" class="layer bg"></div>
+        <div id="input-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, AMBER, RED, arrowText, chapter } = emaki, { VIEW, CO } = emaki.film; // kit.js, film.js
+          const c = chapter("input"), { layer, box, to, set, pop, pulse, appear, vanish, show, caption, HIDDEN, SMALL } = c;
+          const tag = "05 · WHERE A DIRECTED BOND STARTS", G = D.graphs.A, { v: DV, e: DE, in: DIN, h: DH } = D.dims;
+          const world = layer(), ui = layer(), m = c.mol(world, "A", VIEW.input);
+          G.edges.forEach((_, k) => m.direct(k));
+          // the input of directed bond k: the row of the atom it leaves, then its own row of E
+          const input = (k) => [...G.V[G.edges[k][0]], ...G.E[k]];
+          const OPT = { cell: 15, gap: 2, space: 9 };
+          // an input as a row of cells at height y, its name over its left end and its two halves named under it
+          const row = (k, y, below = 22) => {
+            const v = c.vec(ui, 960, y, input(k), "input", OPT), atomEnd = v.at(DV - 1), bondStart = v.at(DV);
+            const name = box(ui, `<div class="rowlbl">${arrowText("A", k)}</div>`, v.at(0)[0] - 8, y - 26, { xPercent: 0, autoAlpha: 0 });
+            const [u] = G.edges[k], who = D.mols.A.atoms[u].text;
+            const halves = [[`the row of <b style="color:${c.ACCENT}">${who}</b>, the atom it leaves · ${DV}`, (v.at(0)[0] + atomEnd[0]) / 2], [`its bond · ${DE}`, (bondStart[0] + v.at(DIN - 1)[0]) / 2]]
+              .map(([html, x]) => box(ui, `<div class="half">${html}</div>`, x, y + v.H + below, HIDDEN));
+            gsap.set(v.el, HIDDEN);
+            return { v, name, halves, all: [v.el, name, ...halves] };
+          };
+          const atomCells = (r) => r.v.hotOnes.filter((i) => i < DV), bondCells = (r) => r.v.hotOnes.filter((i) => i >= DV);
+
+          // ---------- C→O: the carbon's row, then the bond's ----------
+          caption(0.3, 9.4, { tag, title: "A directed bond starts from its atom", sub: `Its input is the row of the atom it leaves, then the bond's own row: ${DV} + ${DE} = ${DIN} numbers.` });
+          const [cOut, oOut] = CO, [C, O] = G.edges[cOut];
+          m.hot(cOut, 1.0, AMBER, 9.2);
+          const one = row(cOut, 760);
+          appear([one.v.el, one.name], 1.6);
+          m.ring(C, 2.2, 5.2); one.v.light(2.6, { only: atomCells(one), step: 0.05 }); appear(one.halves[0], 2.6);
+          one.v.light(4.4, { only: bondCells(one), step: 0.1 }); appear(one.halves[1], 4.4);
+          const total = box(ui, `<div class="eq">= ${DIN}</div>`, one.v.at(DIN - 1)[0] + 30, 760 + one.v.H / 2, { autoAlpha: 0, xPercent: 0 });
+          appear(total, 6.0);
+
+          // ---------- O→C starts elsewhere ----------
+          const differ = G.V[C].map((x, i) => i).filter((i) => G.V[C][i] !== G.V[O][i]);
+          caption(9.6, 17.6, { tag, title: "The two directions start apart", sub: `${arrowText("A", oOut)} starts from oxygen's row instead: the same bond, two different inputs.` });
+          m.hot(oOut, 10.0, AMBER, 17.4);
+          const two = row(oOut, 900, 44);
+          appear([two.v.el, two.name], 10.4);
+          m.ring(O, 10.8, 13.8); two.v.light(11.2, { only: atomCells(two), step: 0.05 }); appear(two.halves[0], 11.2);
+          two.v.light(12.6, { only: bondCells(two), step: 0.1 }); appear(two.halves[1], 12.6);
+          const ticks = differ.map((i, k) => { const [x] = two.v.at(i), el = box(ui, `<div class="tick"></div>`, x, 900 + two.v.H + 10, SMALL); pop(el, 14.0 + k * 0.1); return el; });
+          const note = box(ui, `<div class="half" style="color:${RED}">${differ.length} cells differ, all in the atom's half</div>`, 960, 1030, HIDDEN); appear(note, 14.6);
+          [...one.all, ...two.all, total, ...ticks, note].forEach((el) => vanish(el, 17.8));
+
+          // ---------- 86 in, 300 out ----------
+          caption(18.0, 26.6, { tag, title: `${DIN} in, ${DH} out`, sub: `A learned matrix, W_i, turns each directed bond's ${DIN} numbers into ${DH}. The second film starts there.` });
+          const K = G.edges.length, Y = 790;
+          const parts = [[`<div class="box" style="border-color:#3a4a74;box-shadow:none">${K} × ${DIN}<small>the ${K} inputs</small></div>`, 560], [`<div class="op">→</div>`, 800],
+            [`<div class="box">W<sub>i</sub><small>learned</small></div>`, 960], [`<div class="op">→</div>`, 1120], [`<div class="box" style="border-color:#3a4a74;box-shadow:none">${K} × ${DH}<small>H₀, one row per directed bond</small></div>`, 1400]]
+            .map(([html, x], n) => { const el = box(ui, html, x, Y, SMALL); pop(el, 18.8 + n * 0.45); return el; });
+          const formula = box(ui, `<div class="formula">H₀ = W<sub>i</sub> · [ x<sub>u</sub> ‖ e<sub>uv</sub> ]</div>`, 960, 940, HIDDEN); appear(formula, 21.6);
+          G.edges.forEach((_, k) => m.hot(k, 22.6 + k * 0.12, c.ACCENT));
+          pulse(parts[2].firstChild, 23.4, 1.1);
+
+          c.fadeIn(); c.fadeOut();
+          window.__timelines["input"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

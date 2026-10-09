@@ -18,6 +18,17 @@ together with the code that renders the animation.
 The four fingerprint films follow the same two molecules, N-methylacetamide and N-ethylacetamide, and each
 ends on their Tanimoto similarity under its fingerprint: 0.41, 0.32, 0.00 and 0.79.
 
+### Chemprop
+
+A series on [Chemprop](https://github.com/chemprop/chemprop)'s directed message passing neural network (D-MPNN),
+from the molecule in to the prediction out.
+
+| Animation | Algorithm |
+|---|---|
+| [molgraph](molgraph/) | What a molecule becomes before Chemprop learns anything: 72 numbers per atom, 14 per bond, and every bond turned into two directed ones |
+
+It starts from N-methylacetamide, the molecule of the fingerprint films, and ends on paracetamol.
+
 Each animation is a [HyperFrames](https://github.com/heygen-com/hyperframes) project: HTML, CSS and
 JavaScript that render to video, with no build step. It needs Node.js, and ffmpeg to render.
 
@@ -48,6 +59,10 @@ project stands on its own, and keep what differs in three more files:
 - Chapters are written in seconds from their own start.
 
 After changing the pacing of any of them, `node sync-clips.mjs` moves the clips in `index.html` to match.
+
+`molgraph` is built the same way, with a `kit.js` and `style.css` of its own for the Chemprop films: they keep the
+fingerprint films' camera, molecule and captions, and add directed bonds and feature vectors drawn as rows of cells
+cut into blocks. Its `data.py` runs Chemprop 2.3.1 itself, so `uv run data.py` installs PyTorch the first time.
 
 Every `npm run render` here passes `--no-experimental-fast-capture`: HyperFrames' fast capture left the wall
 of bits out of some stretches of two of the videos, which `snapshot` and `check` do not show.

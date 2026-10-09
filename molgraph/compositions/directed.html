@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <!-- Chapter 04, directed bonds: every bond becomes two, listed in edge_index, paired by rev_edge_index,
+         and both carry the bond's row of E.
+         Only the <template> is mounted. It relies on the host page's <head> for the fonts, the
+         shared classes in style.css and the data and helpers in data.js, kit.js and film.js. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        #directed { position: absolute; inset: 0; overflow: hidden; background: #070a12; color: #eef1f7;
+          font-family: Inter, system-ui, sans-serif; }
+        #directed .cnt { font: 700 34px Inter; color: #8b95ab; }
+        #directed .cnt b { color: #eef1f7; font-weight: 800; }
+      </style>
+
+      <div id="directed" data-composition-id="directed" data-width="1920" data-height="1080">
+        <div id="directed-bg" class="layer bg"></div>
+        <div id="directed-stage" class="layer"></div>
+      </div>
+
+      <script>
+        (() => {
+          const { D, AMBER, arrowText, chapter } = emaki, { VIEW } = emaki.film; // kit.js, film.js
+          const c = chapter("directed"), { layer, box, to, set, pop, pulse, appear, vanish, show, caption, HIDDEN, SMALL } = c;
+          const tag = "04 · EVERY BOND, BOTH WAYS", G = D.graphs.A, M = D.mols.A, K = G.edges.length;
+          const world = layer(), ui = layer(), m = c.mol(world, "A", VIEW.arrows);
+
+          // ---------- every bond, both ways ----------
+          caption(0.3, 9.0, { tag, title: "Every bond, both ways", sub: `Chemprop replaces each bond by two directed bonds, one each way: ${M.bonds.length} bonds become ${K}.` });
+          const nums = G.edges.map((_, k) => { const [x, y] = m.beside(k, 82); return m.badge(x, y, k, "#c4b5fd"); });
+          G.edges.forEach((_, k) => { const t = 1.4 + Math.floor(k / 2) * 1.3 + (k % 2) * 0.55; m.direct(k, t); pop(nums[k], t + 0.4); });
+          const count = box(ui, `<div class="cnt"><b>${M.bonds.length}</b> bonds → <b>${K}</b> directed bonds</div>`, 960, 860, HIDDEN); show(count, 6.9, 8.9);
+          // each atom's index: its row in V
+          const ixs = M.atoms.map((_, n) => m.tag(n, `<span class="ix atom">${n}</span>`, SMALL)); ixs.forEach((el, n) => pop(el, 7.4 + n * 0.12));
+
+          // ---------- edge_index ----------
+          caption(9.2, 17.0, { tag, title: "edge_index lists them", sub: "Directed bond k runs from atom from[k] to atom to[k], the atoms' rows in V." });
+          const COL = (k) => 960 - ((K - 1) / 2) * 70 + k * 70, ROW = { k: 790, from: 846, to: 902, rev: 958 };
+          const head = (row, text) => { const el = box(ui, `<div class="idx"><span class="h">${text}</span></div>`, COL(0) - 50, ROW[row], { xPercent: -100, autoAlpha: 0 }); return el; };
+          const cell = (row, k, text, color = "#eef1f7") => box(ui, `<div class="idx"><span style="color:${color}">${text}</span></div>`, COL(k), ROW[row], SMALL);
+          const heads = [["k", "k"], ["from", "from"], ["to", "to"]].map(([r, text]) => head(r, text));
+          heads.forEach((el, n) => appear(el, 9.6 + n * 0.15));
+          const table = [heads];
+          G.edges.forEach(([u, v], k) => {
+            const t = 10.2 + k * 0.75, cells = [cell("k", k, k, "#c4b5fd"), cell("from", k, u), cell("to", k, v)];
+            m.hot(k, t, AMBER, t + 0.7); cells.forEach((el, n) => pop(el, t + n * 0.12)); table.push(cells);
+          });
+
+          // ---------- rev_edge_index ----------
+          caption(17.2, 23.6, { tag, title: "Its reverse sits next to it", sub: "rev_edge_index pairs each directed bond with the same bond the other way: 0 ↔ 1, 2 ↔ 3, …" });
+          const revHead = head("rev", "rev"); appear(revHead, 17.6); table.push([revHead]);
+          G.rev.forEach((r, k) => { const el = cell("rev", k, r, AMBER); pop(el, 18.0 + k * 0.22); table.push([el]); });
+          M.bonds.forEach((_, b) => { const t = 20.0 + b * 0.85; [2 * b, 2 * b + 1].forEach((k) => m.hot(k, t, AMBER, t + 0.8)); });
+          table.flat().forEach((el) => vanish(el, 23.8));
+
+          // ---------- E: both directions carry the bond's row ----------
+          caption(24.0, 30.6, { tag, title: "Both directions carry the bond's row", sub: `E repeats each bond's ${G.E[0].length} features, once per direction.` });
+          m.move(24.0, 25.2, VIEW.left);
+          const TOP = 360, mx = c.matrix(ui, 1330, TOP, G.E.map((values, k) => ({ values, label: `<span class="ix">${k}</span>${arrowText("A", k)}` })), "bond", { cell: 28, gap: 4, space: 14, rowgap: 8, names: true });
+          mx.rows.forEach((r) => gsap.set([...r.cells, r.lbl], HIDDEN)); mx.rows[0].labels.flat().forEach((e) => { gsap.set(e, HIDDEN); appear(e, 24.8); });
+          M.bonds.forEach((_, b) => { const t = 25.2 + b * 0.8;
+            [2 * b, 2 * b + 1].forEach((k) => { const r = mx.rows[k]; m.hot(k, t, AMBER, t + 0.75); appear([...r.cells, r.lbl], t, 0.3); r.light(t + 0.2, { step: 0.05 }); }); });
+          const shape = box(ui, `<div class="shape">E <small>${G.E.length} × ${G.E[0].length}</small></div>`, 1330, TOP + mx.H + 60, SMALL); pop(shape, 28.6);
+
+          c.fadeIn(); c.fadeOut();
+          window.__timelines["directed"] = c.tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>
